@@ -11,13 +11,13 @@ interface HeaderProps {
 export function Header({ showBackButton = false, backUrl = "/players" }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-6">
-        <Link href="/" className="flex items-center">
+      <div className="container mx-auto flex h-20 items-center justify-between px-6">
+        <Link href="/" className="flex items-center py-2">
           <Image
             src="/icon.png"
             alt="FutScore"
-            width={75}
-            height={75}
+            width={100}
+            height={100}
             priority
             className="object-contain"
           />

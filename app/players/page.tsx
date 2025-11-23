@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { AthletesResponse, Position } from "@/lib/types";
 import { Heart, MapPin, Search } from "lucide-react";
 import Link from "next/link";
+import { Pagination } from "./pagination";
 import { SearchFilters } from "./search-filters";
 
 const API_URL = "https://futscout-api.onrender.com/api";
@@ -71,6 +72,9 @@ export default async function AthletesPage({
 }) {
   const params = await searchParams;
   const data = await getAthletes(params);
+
+  const currentPage = Number(params.page) || 1;
+  const totalPages = Math.ceil(data.pagination.total / data.pagination.limit);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -204,6 +208,15 @@ export default async function AthletesPage({
                 </p>
               </div>
             </div>
+          )}
+
+          {/* Pagination */}
+          {data.athletes.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              total={data.pagination.total}
+            />
           )}
         </div>
       </main>
