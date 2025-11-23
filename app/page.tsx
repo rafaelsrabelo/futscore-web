@@ -28,11 +28,11 @@ export default function Home() {
                 Crie seu perfil profissional, compartilhe vídeos dos seus melhores lances e seja descoberto por clubes e observadores do futebol.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button size="lg" className="gap-2">
-                  Criar Meu Perfil
+                <Button size="lg" className="w-full sm:w-auto">
+                  Baixar Aplicativo
                 </Button>
-                <Link href="/players">
-                  <Button variant="outline" size="lg" className="gap-2">
+                <Link href="/players" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full">
                     Explorar Atletas
                   </Button>
                 </Link>
