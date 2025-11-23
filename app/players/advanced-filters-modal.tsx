@@ -31,7 +31,10 @@ interface AdvancedFiltersModalProps {
   onApply: (filters: AthleteFilters) => void;
 }
 
-const POSITION_OPTIONS = [
+const POSITION_OPTIONS: Array<{
+  value: "GOALKEEPER" | "DEFENDER" | "MIDFIELDER" | "FORWARD" | undefined;
+  label: string;
+}> = [
   { value: undefined, label: "Todos" },
   { value: "GOALKEEPER", label: "Goleiro" },
   { value: "DEFENDER", label: "Defensor" },
@@ -39,20 +42,29 @@ const POSITION_OPTIONS = [
   { value: "FORWARD", label: "Atacante" },
 ];
 
-const FOOT_OPTIONS = [
+const FOOT_OPTIONS: Array<{
+  value: "RIGHT" | "LEFT" | undefined;
+  label: string;
+}> = [
   { value: undefined, label: "Todos" },
   { value: "RIGHT", label: "Destro" },
   { value: "LEFT", label: "Canhoto" },
 ];
 
-const GENDER_OPTIONS = [
+const GENDER_OPTIONS: Array<{
+  value: "MALE" | "FEMALE" | "OTHER" | undefined;
+  label: string;
+}> = [
   { value: undefined, label: "Todos" },
   { value: "MALE", label: "Masculino" },
   { value: "FEMALE", label: "Feminino" },
   { value: "OTHER", label: "Outro" },
 ];
 
-const MANAGER_OPTIONS = [
+const MANAGER_OPTIONS: Array<{
+  value: boolean | undefined;
+  label: string;
+}> = [
   { value: undefined, label: "Todos" },
   { value: true, label: "Com Empresário" },
   { value: false, label: "Sem Empresário" },
