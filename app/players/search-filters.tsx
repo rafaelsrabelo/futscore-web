@@ -13,13 +13,12 @@ import {
 const POSITION_OPTIONS: Array<{
   value: "GOALKEEPER" | "DEFENDER" | "MIDFIELDER" | "FORWARD" | undefined;
   label: string;
-  icon: string;
 }> = [
-  { value: undefined, label: "Todos", icon: "🏃" },
-  { value: "GOALKEEPER", label: "Goleiro", icon: "🧤" },
-  { value: "DEFENDER", label: "Defensor", icon: "🛡️" },
-  { value: "MIDFIELDER", label: "Meio-campo", icon: "⚽" },
-  { value: "FORWARD", label: "Atacante", icon: "⚡" },
+  { value: undefined, label: "Todos" },
+  { value: "GOALKEEPER", label: "Goleiro" },
+  { value: "DEFENDER", label: "Defensor" },
+  { value: "MIDFIELDER", label: "Meio-campo" },
+  { value: "FORWARD", label: "Atacante" },
 ];
 
 export function SearchFilters() {
@@ -194,11 +193,10 @@ export function SearchFilters() {
                 selectedPosition === position.value ? "default" : "outline"
               }
               size="sm"
-              className="gap-2 whitespace-nowrap shrink-0"
+              className="whitespace-nowrap shrink-0"
               onClick={() => handlePositionClick(position.value)}
               disabled={isPending}
             >
-              <span>{position.icon}</span>
               {position.label}
             </Button>
           ))}
