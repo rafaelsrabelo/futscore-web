@@ -27,7 +27,7 @@ export function Header({ showBackButton = false, backUrl = "/players" }: HeaderP
           <Link href={backUrl}>
             <Button variant="ghost" size="sm" className="gap-2">
               <ChevronLeft className="w-4 h-4" />
-              Voltar
+              Ver atletas
             </Button>
           </Link>
         )}

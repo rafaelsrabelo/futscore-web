@@ -1,21 +1,23 @@
 import { Header } from "@/components/header";
+import { PlayerFieldPosition } from "@/components/player/player-field-position";
+import { PlayerStatsCard } from "@/components/player/player-stats-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { AthleteDetailResponse, Position } from "@/lib/types";
+import type { AthleteDetailResponse, Match, Position } from "@/lib/types";
 import {
+  Activity,
   Calendar,
+  Footprints,
   Heart,
-  MapPin,
   Play,
   Ruler,
-  Star,
-  TrendingUp,
+  Shield,
   Trophy,
-  Weight,
 } from "lucide-react";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { MatchesList } from "./matches-list";
 
 const API_URL = "https://futscout-api.onrender.com/api";
 
@@ -154,7 +156,7 @@ export default async function AthleteDetailPage({
                   )}
                   {athlete.currentClub && (
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground ml-2">
-                      <MapPin className="w-4 h-4 text-primary" />
+                      <Shield className="w-4 h-4 text-primary" />
                       <span className="font-medium">{athlete.currentClub}</span>
                     </div>
                   )}
@@ -180,286 +182,134 @@ export default async function AthleteDetailPage({
               </Card>
             )}
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center space-y-2">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Ruler className="w-5 h-5 text-primary" />
+            {/* Stats Grid - Visual melhorado */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="relative overflow-hidden border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex flex-col items-center text-center space-y-1.5">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                      <Ruler className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{athlete.height}cm</p>
-                      <p className="text-xs text-muted-foreground">Altura</p>
+                      <p className="text-3xl font-bold bg-linear-to-br from-primary to-primary/80 bg-clip-text text-transparent">{athlete.height}cm</p>
+                      <p className="text-xs text-muted-foreground font-medium">Altura</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center space-y-2">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Weight className="w-5 h-5 text-primary" />
+              <Card className="relative overflow-hidden border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex flex-col items-center text-center space-y-1.5">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                      <Activity className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{athlete.weight}kg</p>
-                      <p className="text-xs text-muted-foreground">Peso</p>
+                      <p className="text-3xl font-bold bg-linear-to-br from-primary to-primary/80 bg-clip-text text-transparent">{athlete.weight}kg</p>
+                      <p className="text-xs text-muted-foreground font-medium">Peso</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {age && (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-primary" />
+                <Card className="relative overflow-hidden border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
+                  <CardContent className="pt-5 pb-4">
+                    <div className="flex flex-col items-center text-center space-y-1.5">
+                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                        <Calendar className="w-6 h-6 text-primary-foreground" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold">{age}</p>
-                        <p className="text-xs text-muted-foreground">Anos</p>
+                        <p className="text-3xl font-bold bg-linear-to-br from-primary to-primary/80 bg-clip-text text-transparent">{age}</p>
+                        <p className="text-xs text-muted-foreground font-medium">Anos</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center text-center space-y-2">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Trophy className="w-5 h-5 text-primary" />
+              <Card className="relative overflow-hidden border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex flex-col items-center text-center space-y-1.5">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                      <Footprints className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">
+                      <p className="text-xl font-bold bg-linear-to-br from-primary to-primary/80 bg-clip-text text-transparent">
                         {athlete.dominantFoot === "RIGHT"
                           ? "Destro"
                           : athlete.dominantFoot === "LEFT"
                           ? "Canhoto"
                           : "Ambidestro"}
                       </p>
-                      <p className="text-xs text-muted-foreground">Pé</p>
+                      <p className="text-xs text-muted-foreground font-medium">Pé</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Position Map & Match Statistics - Compact Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column - Position Map (4 cols) */}
-              <div className="lg:col-span-4 space-y-6">
-                <Card className="h-full">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-primary" />
-                      Posição em Campo
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="relative aspect-2/3 max-w-sm mx-auto bg-linear-to-b from-green-900/20 to-green-950/20 rounded-lg border-2 border-green-500/20 overflow-hidden">
-                      {/* Field Lines */}
-                      <div className="absolute inset-0">
-                        {/* Center Line */}
-                        <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/30" />
-                        {/* Center Circle */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border border-green-500/30" />
-                        {/* Penalty Areas */}
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-16 border-b border-x border-green-500/30" />
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-16 border-t border-x border-green-500/30" />
-                      </div>
-                      
-                      {/* Player Position Marker */}
-                      <div 
-                        className="absolute w-12 h-12 -translate-x-1/2 -translate-y-1/2 transition-all"
-                        style={{
-                          left: "50%",
-                          top: athlete.primaryPosition === "GOALKEEPER" ? "10%" :
-                               athlete.primaryPosition === "DEFENDER" ? "30%" :
-                               athlete.primaryPosition === "MIDFIELDER" ? "55%" :
-                               athlete.primaryPosition === "FORWARD" ? "80%" : "50%"
-                        }}
-                      >
-                        <div className="relative w-full h-full">
-                          <div className="absolute inset-0 bg-primary rounded-full animate-ping opacity-30" />
-                          <div className="relative w-full h-full bg-primary rounded-full border-2 border-primary-foreground flex items-center justify-center shadow-lg shadow-primary/50">
-                            <span className="text-xs font-bold text-primary-foreground text-center leading-tight">
-                              {athlete.primaryPosition === "GOALKEEPER" ? "GOL" :
-                               athlete.primaryPosition === "DEFENDER" ? "DEF" :
-                               athlete.primaryPosition === "MIDFIELDER" ? "MEI" :
-                               athlete.primaryPosition === "FORWARD" ? "ATA" : "?"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+            {/* Stats Grid - Layout adaptativo */}
+            {allMatches.length > 0 ? (
+              // Layout com partidas: 6-3-3 (50% - 25% - 25%)
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:items-stretch">
+                {/* Coluna 1: Partidas Recentes (50%) */}
+                <div className="lg:col-span-6 flex flex-col">
+                  <div className="flex-1">
+                    <MatchesList matches={allMatches as Match[]} />
+                  </div>
+                </div>
+
+                {/* Coluna 2: Posição em Campo (25%) */}
+                <div className="lg:col-span-3 flex flex-col">
+                  <div className="flex-1">
+                    <PlayerFieldPosition position={athlete.primaryPosition} />
+                  </div>
+                </div>
+
+                {/* Coluna 3: Estatísticas (25%) */}
+                <div className="lg:col-span-3 flex flex-col">
+                  <div className="flex-1">
+                    <PlayerStatsCard
+                      wins={wins}
+                      draws={draws}
+                      losses={losses}
+                      totalMatches={allMatches.length}
+                      averageRating={
+                        allMatches.some(m => m.performanceRating)
+                          ? allMatches
+                              .filter(m => m.performanceRating)
+                              .reduce((acc, m) => acc + (m.performanceRating || 0), 0) /
+                            allMatches.filter(m => m.performanceRating).length
+                          : undefined
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Layout sem partidas: Campo centralizado + Estados vazios
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Campo centralizado */}
+                <div className="lg:col-span-1">
+                  <PlayerFieldPosition position={athlete.primaryPosition} />
+                </div>
+
+                {/* Estado vazio: Sem Partidas */}
+                <Card className="lg:col-span-2 border-dashed border-2 border-muted-foreground/20 bg-muted/20">
+                  <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                      <Trophy className="w-8 h-8 text-muted-foreground" />
                     </div>
+                    <h3 className="text-lg font-semibold mb-2">Nenhuma partida registrada</h3>
+                    <p className="text-sm text-muted-foreground max-w-sm">
+                      Este atleta ainda não possui partidas cadastradas. As estatísticas e 
+                      histórico de jogos aparecerão aqui após o primeiro jogo ser adicionado.
+                    </p>
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Right Column - Statistics & Recent Matches (8 cols) */}
-              <div className="lg:col-span-8 space-y-6">
-                {/* Match Statistics */}
-                {allMatches.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-primary" />
-                        Estatísticas de Partidas
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-3 gap-4 text-center">
-                        <div className="space-y-1">
-                          <p className="text-3xl font-bold text-green-500">
-                            {wins}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Vitórias</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-3xl font-bold text-yellow-500">
-                            {draws}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Empates</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-3xl font-bold text-red-500">
-                            {losses}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Derrotas</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Recent Matches */}
-                {allMatches.length > 0 && (
-                  <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <Trophy className="w-5 h-5 text-primary" />
-                        Partidas Recentes
-                      </span>
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {allMatches.length} partidas
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {allMatches.slice(0, 10).map((match) => (
-                      <div
-                        key={match.id}
-                        className="relative group hover:bg-muted/50 rounded-lg p-4 transition-colors border border-border/50"
-                      >
-                        {/* Top Row - Date, Teams and Result */}
-                        <div className="flex items-center gap-3">
-                          {/* Date and Category */}
-                          <div className="flex flex-col gap-1 w-20 shrink-0">
-                            <p className="text-xs font-medium text-muted-foreground">
-                              {new Date(match.date).toLocaleDateString("pt-BR", {
-                                day: "2-digit",
-                                month: "2-digit",
-                              })}
-                            </p>
-                            <Badge variant="outline" className="text-xs w-fit px-1.5 py-0">
-                              {match.category}
-                            </Badge>
-                          </div>
-
-                          {/* Teams and Score */}
-                          <div className="flex-1 flex flex-col gap-2">
-                            {/* Home Team */}
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-medium text-sm">{match.myTeam.name}</span>
-                              {match.result !== "NOT_FINISHED" && (
-                                <span className="text-lg font-bold w-6 text-right">
-                                  {match.myTeamScore}
-                                </span>
-                              )}
-                            </div>
-                            
-                            {/* Away Team */}
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-medium text-sm text-muted-foreground">
-                                {match.adversaryTeam}
-                              </span>
-                              {match.result !== "NOT_FINISHED" ? (
-                                <span className="text-lg font-bold w-6 text-right text-muted-foreground">
-                                  {match.adversaryScore}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">vs</span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Result Badge */}
-                          <div className="shrink-0">
-                            {match.result === "WIN" && (
-                              <div className="w-8 h-8 rounded-md bg-green-500/10 flex items-center justify-center">
-                                <span className="text-green-500 font-bold text-sm">V</span>
-                              </div>
-                            )}
-                            {match.result === "DRAW" && (
-                              <div className="w-8 h-8 rounded-md bg-yellow-500/10 flex items-center justify-center">
-                                <span className="text-yellow-500 font-bold text-sm">E</span>
-                              </div>
-                            )}
-                            {match.result === "LOSS" && (
-                              <div className="w-8 h-8 rounded-md bg-red-500/10 flex items-center justify-center">
-                                <span className="text-red-500 font-bold text-sm">D</span>
-                              </div>
-                            )}
-                            {match.result === "NOT_FINISHED" && (
-                              <Badge variant="outline" className="text-xs">
-                                Agendado
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Bottom Row - Additional Info */}
-                        {(match.location || match.performanceRating) && (
-                          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/50 text-xs">
-                            {match.location && (
-                              <div className="flex items-center gap-1.5 text-muted-foreground">
-                                <MapPin className="w-3.5 h-3.5" />
-                                <span>{match.location}</span>
-                              </div>
-                            )}
-                            {match.performanceRating && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground">Avaliação:</span>
-                                <div className="flex items-center gap-0.5">
-                                  {Array.from({ length: 5 }, (_, i) => i).map((index) => (
-                                    <Star
-                                      key={`star-${match.id}-${index}`}
-                                      className={`w-3.5 h-3.5 ${
-                                        match.performanceRating && index < match.performanceRating
-                                          ? "fill-primary text-primary"
-                                          : "text-muted-foreground"
-                                      }`}
-                                    />
-                                  ))}
-                                </div>
-                                <span className="font-medium text-foreground">
-                                  {match.performanceRating}.0
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-                )}
-              </div>
-            </div>
+            )}
 
             {/* Video Feed */}
             {athlete.videoFeed && athlete.videoFeed.length > 0 && (
