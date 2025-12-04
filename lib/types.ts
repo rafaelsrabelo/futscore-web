@@ -101,6 +101,7 @@ export interface Athlete {
   createdAt: string;
   favorites: number;
   isFavorite: boolean;
+  isPremium?: boolean;
   // Campos extras para a página detalhada
   cpf?: string;
   birthDate?: string;

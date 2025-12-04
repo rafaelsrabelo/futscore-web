@@ -26,15 +26,9 @@ export default function AthleteNotFound() {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Link href="/players" className="flex-1">
-                <Button variant="default" className="w-full gap-2">
-                  <Search className="w-4 h-4" />
-                  Ver todos os jogadores
-                </Button>
-              </Link>
-              <Link href="/" className="flex-1">
-                <Button variant="outline" className="w-full gap-2">
+            <div className="flex justify-center pt-4">
+              <Link href="/">
+                <Button variant="default" className="gap-2">
                   <ArrowLeft className="w-4 h-4" />
                   Voltar ao início
                 </Button>

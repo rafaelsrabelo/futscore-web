@@ -8,7 +8,7 @@ interface HeaderProps {
   backUrl?: string;
 }
 
-export function Header({ showBackButton = false, backUrl = "/players" }: HeaderProps) {
+export function Header({ showBackButton = false, backUrl = "/" }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto flex h-20 items-center justify-between px-6">
@@ -27,7 +27,7 @@ export function Header({ showBackButton = false, backUrl = "/players" }: HeaderP
           <Link href={backUrl}>
             <Button variant="ghost" size="sm" className="gap-2">
               <ChevronLeft className="w-4 h-4" />
-              Ver atletas
+              Voltar
             </Button>
           </Link>
         )}

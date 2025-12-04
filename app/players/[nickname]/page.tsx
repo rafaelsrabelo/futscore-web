@@ -8,6 +8,7 @@ import type { AthleteDetailResponse, Match, Position } from "@/lib/types";
 import {
   Activity,
   Calendar,
+  Check,
   Footprints,
   Heart,
   Play,
@@ -21,13 +22,30 @@ import { MatchesList } from "./matches-list";
 
 const API_URL = "https://futscout-api.onrender.com/api";
 
+// Função auxiliar para verificar se é um UUID
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 async function getAthleteByNickname(
   nickname: string
 ): Promise<AthleteDetailResponse | null> {
   try {
-    // Primeiro, buscar todos os atletas para pegar o ID pelo nickname
+    // Se for um UUID, buscar diretamente pelo ID
+    if (isUUID(nickname)) {
+      const detailRes = await fetch(`${API_URL}/public/athletes/${nickname}`, {
+        next: { revalidate: 60 },
+      });
+
+      if (!detailRes.ok) return null;
+
+      return detailRes.json();
+    }
+
+    // Caso contrário, buscar por nickname
     const searchRes = await fetch(
-      `${API_URL}/public/athletes?search=${nickname}`,
+      `${API_URL}/public/athletes?nickname=${nickname}`,
       {
         next: { revalidate: 60 },
       }
@@ -37,7 +55,7 @@ async function getAthleteByNickname(
 
     const searchData = await searchRes.json();
     const athlete = searchData.athletes.find(
-      (a: { nickname: string }) => a.nickname.toLowerCase() === nickname.toLowerCase()
+      (a: { nickname: string }) => a.nickname?.toLowerCase() === nickname.toLowerCase()
     );
 
     if (!athlete) return null;
@@ -103,7 +121,7 @@ export default async function AthleteDetailPage({
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <Header showBackButton />
+      <Header />
 
       {/* Main Content */}
       <main className="flex-1">
@@ -131,6 +149,11 @@ export default async function AthleteDetailPage({
               <div className="flex-1 space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl md:text-4xl font-bold">{athlete.user.name}</h1>
+                  {athlete.isPremium && (
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-400">
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                  )}
                   {athlete.favorites > 0 && (
                     <div className="flex items-center gap-1.5 bg-muted/80 backdrop-blur-sm rounded-full px-3 py-1.5">
                       <Heart className="w-4 h-4 text-red-500 fill-red-500" />

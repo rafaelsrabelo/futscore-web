@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Activity, BarChart3, Eye, Footprints, Heart, Ruler, Shield, Star, Trophy, Video } from "lucide-react";
-import Link from "next/link";
 
 export default function Home() {
   return (
@@ -28,18 +27,30 @@ export default function Home() {
                 Crie seu perfil profissional, compartilhe vídeos dos seus melhores lances e seja descoberto por clubes e observadores do futebol.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button size="lg" className="w-full sm:w-auto group relative overflow-hidden">
-                  <span className="relative z-10 flex items-center gap-2">
-                    Baixar Aplicativo
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">NOVO</Badge>
-                  </span>
-                  <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Button>
-                <Link href="/players" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full group hover:border-primary/50 hover:bg-primary/5 transition-all">
-                    <span className="group-hover:text-primary transition-colors">Explorar Atletas</span>
+                <a 
+                  href="https://apps.apple.com/us/app/futscore/id6754995110" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto"
+                >
+                  <Button size="lg" className="w-full sm:w-auto group relative overflow-hidden">
+                    <span className="relative z-10 flex items-center gap-2">
+                      Baixar na App Store
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">NOVO</Badge>
+                    </span>
+                    <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Button>
-                </Link>
+                </a>
+                <a 
+                  href="https://play.google.com/store/apps/details?id=com.futscore.app" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto"
+                >
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto group hover:border-primary/50 hover:bg-primary/5 transition-all">
+                    <span className="group-hover:text-primary transition-colors">Baixar no Google Play</span>
+                  </Button>
+                </a>
               </div>
 
               {/* Features List */}
