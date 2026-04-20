@@ -263,3 +263,68 @@ export interface AdminTeamHistoryResponse {
   items: AdminTeamHistoryItem[];
   currentTeam: AdminTeamHistoryItem | null;
 }
+
+// ---- Dashboard ----
+
+export interface DashboardOverviewTotals {
+  athletes: number;
+  observers: number;
+  matches: number;
+  plays: number;
+  achievements?: number;
+  activeSubscriptions: number;
+}
+
+export interface DashboardOverviewPeriod {
+  days: number;
+  from: string;
+  to: string;
+  newAthletes: number;
+  newObservers: number;
+  newMatches: number;
+  newPlays: number;
+}
+
+export interface DashboardOverview {
+  totals: DashboardOverviewTotals;
+  period: DashboardOverviewPeriod;
+}
+
+export type DashboardGrowthPeriod = "daily" | "weekly" | "monthly";
+
+export interface DashboardGrowthBucket {
+  bucket: string;
+  newAthletes: number;
+  newObservers: number;
+  total: number;
+}
+
+export interface DashboardUserGrowth {
+  period: DashboardGrowthPeriod;
+  from: string;
+  to: string;
+  series: DashboardGrowthBucket[];
+}
+
+export interface DashboardUserActivity {
+  total: number;
+  activeLast7d: number;
+  activeLast30d: number;
+  activeLast90d: number;
+  inactiveOver30d: number;
+  inactiveOver90d: number;
+  neverLoggedIn: number;
+  activePercent30d: number;
+}
+
+export interface DashboardInactivityBucket {
+  label: string;
+  minDays: number | null;
+  maxDays: number | null;
+  count: number;
+}
+
+export interface DashboardInactivityBuckets {
+  buckets: DashboardInactivityBucket[];
+  total: number;
+}
