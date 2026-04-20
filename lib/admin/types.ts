@@ -62,3 +62,30 @@ export interface AdminAthletesResponse {
   total: number;
   hasMore: boolean;
 }
+
+export interface GlobalSearchAthlete {
+  id: string;
+  name: string;
+  slug?: string | null;
+  photoUrl: string | null;
+  position: Position | null;
+  currentClub?: string | null;
+}
+
+export interface GlobalSearchMatch {
+  id: string;
+  date: string;
+  adversaryTeam: string;
+  myTeamScore: number | null;
+  adversaryScore: number | null;
+  athlete: {
+    id: string;
+    name: string;
+    photoUrl: string | null;
+  };
+}
+
+export interface GlobalSearchResponse {
+  athletes: GlobalSearchAthlete[];
+  matches: GlobalSearchMatch[];
+}

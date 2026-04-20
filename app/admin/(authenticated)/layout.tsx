@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/admin/app-sidebar";
+import { GlobalSearch } from "@/components/admin/global-search";
 import { UserMenu } from "@/components/admin/user-menu";
 import { requireSession } from "@/lib/admin/auth";
 
@@ -16,8 +17,8 @@ export default async function AdminAuthenticatedLayout({
       <AppSidebar />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 border-b border-border/60 bg-background/80 backdrop-blur-sm">
-          <div className="lg:hidden flex items-center gap-2">
+        <header className="sticky top-0 z-30 flex items-center gap-4 h-16 px-4 md:px-6 border-b border-border/60 bg-background/80 backdrop-blur-sm">
+          <div className="lg:hidden flex items-center gap-2 shrink-0">
             <Image
               src="/icon.png"
               alt="FutScore"
@@ -27,7 +28,11 @@ export default async function AdminAuthenticatedLayout({
             />
             <span className="text-sm font-semibold">Admin</span>
           </div>
-          <div className="hidden lg:block" />
+
+          <div className="flex-1 flex justify-center md:justify-start">
+            <GlobalSearch />
+          </div>
+
           <UserMenu user={session.user} />
         </header>
 
