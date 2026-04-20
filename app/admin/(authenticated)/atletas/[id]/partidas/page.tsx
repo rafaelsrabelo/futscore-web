@@ -1,4 +1,5 @@
 import { AlertTriangle, Calendar, ChevronRight, Trophy } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminAthleteMatches } from "@/lib/admin/athletes";
 import type { AdminMatchListItem } from "@/lib/admin/types";
@@ -100,9 +101,9 @@ function MatchRow({ match }: { match: AdminMatchListItem }) {
       : "—";
 
   return (
-    <div
-      className="flex items-center gap-4 p-4 rounded-lg border border-border/60 bg-card/40 hover:bg-accent/30 transition-colors cursor-not-allowed"
-      title="Detalhe da partida em breve"
+    <Link
+      href={`/admin/partidas/${match.id}`}
+      className="flex items-center gap-4 p-4 rounded-lg border border-border/60 bg-card/40 hover:border-primary/40 hover:bg-card/60 transition-colors"
     >
       <div className="flex flex-col items-center justify-center w-14 shrink-0">
         <Calendar className="w-4 h-4 text-muted-foreground mb-1" />
@@ -128,8 +129,8 @@ function MatchRow({ match }: { match: AdminMatchListItem }) {
         <ResultChip result={match.result} />
       </div>
 
-      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 opacity-40" />
-    </div>
+      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 opacity-60" />
+    </Link>
   );
 }
 

@@ -1,8 +1,10 @@
 import type {
+  Category,
   DominantFoot,
   Gender,
   MatchResult,
   MatchStatus,
+  Modality,
   Position,
 } from "@/lib/types";
 
@@ -192,6 +194,65 @@ export interface AdminMatchListResponse {
   pageSize: number;
   total: number;
   hasMore: boolean;
+}
+
+// ---- Global matches (BE-10 / BE-11 / BE-12) ----
+
+export interface AdminMatchAthleteProfile {
+  id: string;
+  name: string;
+  nickname: string | null;
+  profilePhoto: string | null;
+  primaryPosition: Position;
+}
+
+export interface AdminMatchesGlobalItem extends AdminMatchListItem {
+  athleteProfile: AdminMatchAthleteProfile;
+  myTeamId?: string | null;
+  modality?: Modality | null;
+  category?: Category | null;
+  location?: string | null;
+  athleteId?: string | null;
+}
+
+export interface AdminMatchesGlobalResponse {
+  items: AdminMatchesGlobalItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export interface AdminMatchTeam {
+  id: string;
+  name: string;
+  acronym: string | null;
+  shieldPhoto: string | null;
+}
+
+export interface AdminMatchDetail {
+  id: string;
+  date: string;
+  adversaryTeam: string;
+  myTeamScore: number | null;
+  adversaryScore: number | null;
+  status: MatchStatus;
+  result: MatchResult;
+  playsCount: number;
+  isFriendly?: boolean;
+  location?: string | null;
+  modality?: Modality | null;
+  category?: Category | null;
+  observations?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  athleteProfile: AdminMatchAthleteProfile;
+  myTeam: AdminMatchTeam | null;
+  competition: { id: string; name: string } | null;
+}
+
+export interface AdminMatchPlaysResponse {
+  items: AdminPlayItem[];
 }
 
 export type AdminPlayClassificationType =

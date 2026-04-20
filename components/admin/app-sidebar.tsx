@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bell,
+  CalendarDays,
   Eye,
   KeyRound,
   LayoutDashboard,
@@ -23,6 +24,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/atletas", label: "Atletas", icon: Users },
+  { href: "/admin/partidas", label: "Partidas", icon: CalendarDays },
   { href: "/admin/olheiros", label: "Olheiros", icon: Eye },
   { href: "/admin/acessos", label: "Acessos", icon: KeyRound },
   { href: "/admin/notificacoes", label: "Notificações", icon: Bell },
