@@ -298,7 +298,7 @@ function AthleteRow({
   athlete: GlobalSearchAthlete;
   onNavigate: (href: string) => void;
 }) {
-  const href = `/players/${athlete.slug ?? athlete.id}`;
+  const href = `/admin/atletas/${athlete.id}`;
   return (
     <button
       type="button"

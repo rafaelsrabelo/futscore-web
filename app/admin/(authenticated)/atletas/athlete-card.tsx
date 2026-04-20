@@ -36,7 +36,7 @@ function heightInCm(height: number): number {
 }
 
 export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
-  const href = `/players/${athlete.nickname ?? athlete.id}`;
+  const href = `/admin/atletas/${athlete.id}`;
   const displayName = athlete.nickname || athlete.user.name;
   const heightCm = heightInCm(athlete.height);
 
@@ -112,7 +112,7 @@ export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
         href={href}
         className="flex items-center justify-between px-4 py-3 text-[10px] font-bold tracking-wider text-primary border-t border-border/60 hover:bg-primary/5 transition-colors"
       >
-        Ver perfil completo
+        Abrir detalhes
         <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
       </Link>
     </article>

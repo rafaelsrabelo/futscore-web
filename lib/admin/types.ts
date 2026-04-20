@@ -89,3 +89,81 @@ export interface GlobalSearchResponse {
   athletes: GlobalSearchAthlete[];
   matches: GlobalSearchMatch[];
 }
+
+export interface AdminAthleteDetailProfile {
+  id: string;
+  userId: string;
+  nickname: string | null;
+  profilePhoto: string | null;
+  birthDate: string | null;
+  age?: number | null;
+  gender: Gender;
+  primaryPosition: Position;
+  secondaryPosition: Position | null;
+  dominantFoot: DominantFoot;
+  currentClub: string | null;
+  /** Altura em metros. */
+  height: number;
+  weight: number;
+  hasManager: boolean;
+  managerName?: string | null;
+  managerCompany?: string | null;
+  managerContact?: string | null;
+  biography?: string | null;
+  cpf?: string | null;
+  instagramUrl?: string | null;
+  twitterUrl?: string | null;
+  youtubeUrl?: string | null;
+  hasNutritionist?: boolean;
+  hasPsychologist?: boolean;
+  hasPersonalTrainer?: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AdminAthleteDetailAddress {
+  zipCode: string;
+  street: string;
+  number: string;
+  complement: string | null;
+  district: string;
+  city: string;
+  state: string;
+  country: string;
+}
+
+export interface AdminAthleteDetailUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "ATHLETE" | "ADMIN" | "OBSERVER";
+  emailVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export interface AdminAthleteDetailCounts {
+  matches: number;
+  plays: number;
+  achievements: number;
+  teamHistory: number;
+}
+
+export interface AdminAthleteDetailSubscription {
+  planName: string;
+  planPrice: number;
+  planCurrency: string;
+  planIsUnlimited: boolean;
+  status: string;
+  currentPeriodEnd: string;
+}
+
+export interface AdminAthleteDetail {
+  profile: AdminAthleteDetailProfile;
+  address: AdminAthleteDetailAddress | null;
+  user: AdminAthleteDetailUser;
+  counts: AdminAthleteDetailCounts;
+  playsByType?: Record<string, number>;
+  subscription: AdminAthleteDetailSubscription | null;
+}
