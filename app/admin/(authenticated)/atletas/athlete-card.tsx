@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Check } from "lucide-react";
-import type { Athlete } from "@/lib/types";
+import { ArrowRight, MailCheck, MailWarning } from "lucide-react";
+import type { AdminAthleteListItem } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 
 const POSITION_LABELS: Record<string, string> = {
@@ -16,15 +16,6 @@ const FOOT_LABELS: Record<string, string> = {
   RIGHT: "Destro",
 };
 
-function ageFromBirth(birthDate: string | undefined | null): number | null {
-  if (!birthDate) return null;
-  const age = Math.floor(
-    (Date.now() - new Date(birthDate).getTime()) /
-      (365.25 * 24 * 60 * 60 * 1000)
-  );
-  return Number.isFinite(age) && age > 0 ? age : null;
-}
-
 function initialsOf(name: string): string {
   return name
     .split(" ")
@@ -35,10 +26,19 @@ function initialsOf(name: string): string {
     .toUpperCase();
 }
 
-export function AthleteCard({ athlete }: { athlete: Athlete }) {
-  const age = ageFromBirth(athlete.birthDate);
+/**
+ * Admin API manda altura em metros (1.78). Alguns endpoints antigos mandam em cm.
+ * Heurística simples: valores < 3 tratamos como metros.
+ */
+function heightInCm(height: number): number {
+  if (!Number.isFinite(height) || height <= 0) return 0;
+  return height < 3 ? Math.round(height * 100) : Math.round(height);
+}
+
+export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
   const href = `/players/${athlete.nickname ?? athlete.id}`;
   const displayName = athlete.nickname || athlete.user.name;
+  const heightCm = heightInCm(athlete.height);
 
   return (
     <article
@@ -53,15 +53,15 @@ export function AthleteCard({ athlete }: { athlete: Athlete }) {
             <span className="text-[10px] font-bold tracking-wider text-muted-foreground">
               {POSITION_LABELS[athlete.primaryPosition] ??
                 athlete.primaryPosition}
-              {age != null && ` · ${age} ANOS`}
+              {athlete.age != null && ` · ${athlete.age} ANOS`}
             </span>
             <span className="text-[11px] text-muted-foreground truncate">
               {athlete.currentClub || "Sem clube"}
             </span>
           </div>
-          {age != null && (
+          {athlete.age != null && (
             <span className="text-3xl font-bold leading-none bg-linear-to-br from-primary to-green-400 bg-clip-text text-transparent">
-              {age}
+              {athlete.age}
             </span>
           )}
         </div>
@@ -85,24 +85,23 @@ export function AthleteCard({ athlete }: { athlete: Athlete }) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <h3 className="font-semibold truncate">{displayName}</h3>
-              {athlete.isPremium && (
-                <div className="flex items-center justify-center w-4 h-4 rounded-full bg-primary shrink-0">
-                  <Check className="w-3 h-3 text-primary-foreground" />
-                </div>
-              )}
+              <StatusDot active={athlete.user.isActive} />
             </div>
-            {athlete.nickname && (
-              <span className="text-xs text-muted-foreground truncate block">
-                @{athlete.nickname}
-              </span>
-            )}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              {athlete.user.emailVerified ? (
+                <MailCheck className="w-3 h-3 text-primary shrink-0" />
+              ) : (
+                <MailWarning className="w-3 h-3 text-amber-500 shrink-0" />
+              )}
+              <span className="truncate">{athlete.user.email}</span>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-3 border-t border-border/60 divide-x divide-border/60">
-        <Stat label="ALT" value={String(athlete.height)} unit="cm" />
-        <Stat label="PESO" value={String(athlete.weight)} unit="kg" />
+        <Stat label="ALT" value={heightCm ? String(heightCm) : "—"} unit={heightCm ? "cm" : undefined} />
+        <Stat label="PESO" value={athlete.weight ? String(athlete.weight) : "—"} unit={athlete.weight ? "kg" : undefined} />
         <Stat
           label="PÉ"
           value={FOOT_LABELS[athlete.dominantFoot] ?? "—"}
@@ -117,6 +116,18 @@ export function AthleteCard({ athlete }: { athlete: Athlete }) {
         <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
       </Link>
     </article>
+  );
+}
+
+function StatusDot({ active }: { active: boolean }) {
+  return (
+    <span
+      title={active ? "Ativo" : "Inativo"}
+      className={cn(
+        "inline-block w-2 h-2 rounded-full shrink-0",
+        active ? "bg-primary" : "bg-muted-foreground/40"
+      )}
+    />
   );
 }
 

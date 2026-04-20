@@ -3,6 +3,7 @@ import {
   ACCESS_COOKIE_MAX_AGE,
   ADMIN_ACCESS_COOKIE,
   ADMIN_REFRESH_COOKIE,
+  FRESH_TOKEN_HEADER,
   REFRESH_COOKIE_MAX_AGE,
   SESSION_HEADER,
 } from "@/lib/admin/constants";
@@ -110,6 +111,11 @@ export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   if (verified) {
     requestHeaders.set(SESSION_HEADER, JSON.stringify(verified));
+  }
+  // Se rotacionamos o access token, propaga pra `fetchAuthed` usar o novo
+  // dentro do mesmo request (os cookies só chegam no próximo).
+  if (rotated) {
+    requestHeaders.set(FRESH_TOKEN_HEADER, rotated.accessToken);
   }
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });

@@ -1,6 +1,6 @@
 import "server-only";
-import { cookies } from "next/headers";
-import { ADMIN_ACCESS_COOKIE } from "./constants";
+import { cookies, headers } from "next/headers";
+import { ADMIN_ACCESS_COOKIE, FRESH_TOKEN_HEADER } from "./constants";
 
 export const API_URL =
   process.env.API_URL ?? "https://futscout-api.onrender.com/api";
@@ -14,18 +14,22 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
 }
 
 /**
- * Fetch autenticado: anexa Authorization: Bearer <accessToken> lendo o cookie httpOnly.
- * Refresh-on-401 vive no middleware (`proxy.ts`) — não repetimos aqui pra evitar loop.
+ * Fetch autenticado: anexa Authorization: Bearer <accessToken>.
+ * Se o middleware rotacionou o token neste mesmo request, lê o novo
+ * valor do header `x-admin-access-token`; senão cai no cookie.
+ * Refresh-on-401 vive no middleware (`proxy.ts`) — não repetimos aqui.
  */
 export async function fetchAuthed(path: string, init: RequestInit = {}) {
+  const h = await headers();
+  const fresh = h.get(FRESH_TOKEN_HEADER);
   const store = await cookies();
-  const token = store.get(ADMIN_ACCESS_COOKIE)?.value;
+  const token = fresh ?? store.get(ADMIN_ACCESS_COOKIE)?.value;
 
-  const headers = new Headers(init.headers);
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (init.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
+  const reqHeaders = new Headers(init.headers);
+  if (token) reqHeaders.set("Authorization", `Bearer ${token}`);
+  if (init.body && !reqHeaders.has("Content-Type")) {
+    reqHeaders.set("Content-Type", "application/json");
   }
 
-  return fetch(`${API_URL}${path}`, { ...init, headers });
+  return fetch(`${API_URL}${path}`, { ...init, headers: reqHeaders });
 }
