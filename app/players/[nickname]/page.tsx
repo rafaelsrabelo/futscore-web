@@ -20,7 +20,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { MatchesList } from "./matches-list";
 
-const API_URL = "https://futscout-api.onrender.com/api";
+const API_URL =
+  process.env.API_URL ?? "https://futscout-api.onrender.com/api";
 
 // Função auxiliar para verificar se é um UUID
 function isUUID(str: string): boolean {
