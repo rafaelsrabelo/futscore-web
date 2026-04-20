@@ -2,8 +2,17 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 import { ADMIN_ACCESS_COOKIE, FRESH_TOKEN_HEADER } from "./constants";
 
-export const API_URL =
-  process.env.API_URL ?? "https://futscout-api.onrender.com/api";
+/**
+ * Normaliza o valor cru da env: remove trailing slash e espaços.
+ * Não força `/api` porque endpoints podem variar entre ambientes.
+ */
+function normalizeApiUrl(raw: string | undefined): string {
+  const value = (raw ?? "").trim();
+  const withoutTrailing = value.replace(/\/+$/, "");
+  return withoutTrailing || "https://futscout-api.onrender.com/api";
+}
+
+export const API_URL = normalizeApiUrl(process.env.API_URL);
 
 /**
  * Fetch contra o backend sem anexar credenciais.

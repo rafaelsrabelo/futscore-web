@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { SlidersHorizontal, Users } from "lucide-react";
-import { fetchAuthed } from "@/lib/admin/api";
+import { AlertTriangle, SlidersHorizontal, Users } from "lucide-react";
+import { API_URL, fetchAuthed } from "@/lib/admin/api";
 import type { AdminAthletesResponse } from "@/lib/admin/types";
 import type { Position } from "@/lib/types";
 import { EmptyState } from "@/components/admin/page-header";
@@ -50,18 +50,37 @@ function buildApiQuery({
   return params.toString();
 }
 
-async function fetchAdminAthletes(query: string): Promise<AdminAthletesResponse | { error: number }> {
-  const res = await fetchAuthed(`/admin/athletes?${query}`, {
-    cache: "no-store",
-  });
+type FetchResult =
+  | { kind: "ok"; data: AdminAthletesResponse }
+  | { kind: "auth-error"; status: 401 | 403 }
+  | { kind: "http-error"; status: number; url: string }
+  | { kind: "network-error"; url: string };
+
+async function fetchAdminAthletes(query: string): Promise<FetchResult> {
+  const path = `/admin/athletes?${query}`;
+  const url = `${API_URL}${path}`;
+  let res: Response;
+  try {
+    res = await fetchAuthed(path, { cache: "no-store" });
+  } catch (err) {
+    console.error("[atletas] network error", { url, err });
+    return { kind: "network-error", url };
+  }
+
   if (res.status === 401 || res.status === 403) {
-    return { error: res.status };
+    return { kind: "auth-error", status: res.status as 401 | 403 };
   }
   if (!res.ok) {
-    console.error("[atletas] GET /admin/athletes not ok", res.status);
-    return { items: [], page: 1, pageSize: PAGE_SIZE, total: 0, hasMore: false };
+    const body = await res.text().catch(() => "");
+    console.error("[atletas] GET /admin/athletes not ok", {
+      status: res.status,
+      url,
+      body: body.slice(0, 300),
+    });
+    return { kind: "http-error", status: res.status, url };
   }
-  return res.json();
+  const data = (await res.json()) as AdminAthletesResponse;
+  return { kind: "ok", data };
 }
 
 export default async function AtletasPage({
@@ -78,7 +97,7 @@ export default async function AtletasPage({
   const apiQuery = buildApiQuery({ q, position, page });
   const result = await fetchAdminAthletes(apiQuery);
 
-  if ("error" in result) {
+  if (result.kind === "auth-error") {
     redirect("/admin/login");
   }
 
@@ -105,7 +124,7 @@ export default async function AtletasPage({
           <SlidersHorizontal className="w-4 h-4" />
           Filtros avançados
           <span className="rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5">
-            {result.total}
+            {result.kind === "ok" ? result.data.total : 0}
           </span>
         </button>
       </div>
@@ -115,7 +134,9 @@ export default async function AtletasPage({
         <PositionFilter active={position} />
       </div>
 
-      {result.items.length === 0 ? (
+      {result.kind !== "ok" ? (
+        <BackendError result={result} />
+      ) : result.data.items.length === 0 ? (
         <EmptyState
           icon={<Users className="w-6 h-6" />}
           title={q ? "Nenhum atleta encontrado" : "Nenhum atleta cadastrado"}
@@ -128,20 +149,50 @@ export default async function AtletasPage({
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {result.items.map((athlete) => (
+            {result.data.items.map((athlete) => (
               <AthleteCard key={athlete.id} athlete={athlete} />
             ))}
           </div>
           <Pagination
-            page={result.page}
-            pageSize={result.pageSize}
-            total={result.total}
-            hasMore={result.hasMore}
+            page={result.data.page}
+            pageSize={result.data.pageSize}
+            total={result.data.total}
+            hasMore={result.data.hasMore}
             baseSearch={baseSearch}
             pathname="/admin/atletas"
           />
         </>
       )}
     </>
+  );
+}
+
+function BackendError({
+  result,
+}: {
+  result: Extract<FetchResult, { kind: "http-error" } | { kind: "network-error" }>;
+}) {
+  const isHttp = result.kind === "http-error";
+  const title = isHttp
+    ? `Falha ao carregar atletas (HTTP ${result.status})`
+    : "Falha ao conectar com a API";
+  const hint =
+    isHttp && result.status === 404
+      ? "A rota GET /admin/athletes respondeu 404. Confirme se o deploy do BE-07 subiu em produção."
+      : isHttp && result.status >= 500
+        ? "A API retornou erro interno. Pode ser cold start do Render (free tier dorme após 15min) — tente de novo em alguns segundos."
+        : "Verifique a variável de ambiente API_URL e se o backend está acessível.";
+
+  return (
+    <div className="border-2 border-dashed border-destructive/40 rounded-xl bg-destructive/5 py-10 px-6 flex flex-col items-center text-center">
+      <div className="w-12 h-12 rounded-full bg-destructive/15 flex items-center justify-center mb-3 text-destructive">
+        <AlertTriangle className="w-6 h-6" />
+      </div>
+      <h3 className="text-base font-semibold mb-1">{title}</h3>
+      <p className="text-sm text-muted-foreground max-w-md">{hint}</p>
+      <code className="mt-3 text-[11px] text-muted-foreground bg-card/60 border border-border/60 rounded px-2 py-1 break-all max-w-full">
+        {result.url}
+      </code>
+    </div>
   );
 }
