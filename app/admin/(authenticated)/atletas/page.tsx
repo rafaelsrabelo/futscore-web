@@ -1,9 +1,13 @@
 import { redirect } from "next/navigation";
-import { AlertTriangle, SlidersHorizontal, Users } from "lucide-react";
+import { AlertTriangle, Users } from "lucide-react";
 import { API_URL, fetchAuthed } from "@/lib/admin/api";
 import type { AdminAthletesResponse } from "@/lib/admin/types";
 import type { Position } from "@/lib/types";
 import { EmptyState } from "@/components/admin/page-header";
+import {
+  AdvancedFilters,
+  type AdvancedFilterValues,
+} from "./advanced-filters";
 import { AthleteCard } from "./athlete-card";
 import { Pagination } from "./pagination";
 import { PositionFilter } from "./position-filter";
@@ -16,9 +20,23 @@ interface SearchParams {
   primaryPosition?: string;
   q?: string;
   page?: string;
+  gender?: string;
+  dominantFoot?: string;
+  currentClub?: string;
+  hasManager?: string;
+  minAge?: string;
+  maxAge?: string;
+  minHeight?: string;
+  maxHeight?: string;
+  minWeight?: string;
+  maxWeight?: string;
 }
 
 const PAGE_SIZE = 20;
+
+const GENDERS = new Set(["MALE", "FEMALE", "OTHER"]);
+const FEET = new Set(["LEFT", "RIGHT"]);
+const BOOLS = new Set(["true", "false"]);
 
 function normalizePosition(value: string | undefined): PositionFilterValue {
   const allowed: PositionFilterValue[] = [
@@ -33,21 +51,72 @@ function normalizePosition(value: string | undefined): PositionFilterValue {
     : "ALL";
 }
 
+function pickEnum(value: string | undefined, allowed: Set<string>): string {
+  const v = (value ?? "").trim();
+  return allowed.has(v) ? v : "";
+}
+
+function pickNumber(value: string | undefined): string {
+  const v = (value ?? "").trim();
+  if (!v) return "";
+  const parsed = Number(v);
+  return Number.isFinite(parsed) && parsed >= 0 ? v : "";
+}
+
+function parseAdvanced(sp: SearchParams): AdvancedFilterValues {
+  return {
+    gender: pickEnum(sp.gender, GENDERS),
+    dominantFoot: pickEnum(sp.dominantFoot, FEET),
+    currentClub: (sp.currentClub ?? "").trim(),
+    hasManager: pickEnum(sp.hasManager, BOOLS),
+    minAge: pickNumber(sp.minAge),
+    maxAge: pickNumber(sp.maxAge),
+    minHeight: pickNumber(sp.minHeight),
+    maxHeight: pickNumber(sp.maxHeight),
+    minWeight: pickNumber(sp.minWeight),
+    maxWeight: pickNumber(sp.maxWeight),
+  };
+}
+
 function buildApiQuery({
   q,
   position,
   page,
+  advanced,
 }: {
   q: string;
   position: PositionFilterValue;
   page: number;
+  advanced: AdvancedFilterValues;
 }): string {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (position !== "ALL") params.set("primaryPosition", position);
   params.set("page", String(page));
   params.set("pageSize", String(PAGE_SIZE));
+
+  for (const [key, value] of Object.entries(advanced)) {
+    if (value) params.set(key, value);
+  }
   return params.toString();
+}
+
+function buildBaseSearch({
+  q,
+  position,
+  advanced,
+}: {
+  q: string;
+  position: PositionFilterValue;
+  advanced: AdvancedFilterValues;
+}): URLSearchParams {
+  const base = new URLSearchParams();
+  if (q) base.set("q", q);
+  if (position !== "ALL") base.set("primaryPosition", position);
+  for (const [key, value] of Object.entries(advanced)) {
+    if (value) base.set(key, value);
+  }
+  return base;
 }
 
 type FetchResult =
@@ -89,22 +158,20 @@ export default async function AtletasPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
-  // Aceita tanto `?position=` (interno, legado) quanto `?primaryPosition=` (API)
   const position = normalizePosition(sp.primaryPosition ?? sp.position);
   const q = (sp.q ?? "").trim();
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
+  const advanced = parseAdvanced(sp);
 
-  const apiQuery = buildApiQuery({ q, position, page });
+  const apiQuery = buildApiQuery({ q, position, page, advanced });
   const result = await fetchAdminAthletes(apiQuery);
 
   if (result.kind === "auth-error") {
     redirect("/admin/login");
   }
 
-  // Params preservados ao trocar de página / filtrar (exclui `page` pra resetar ao mudar filtro)
-  const baseSearch = new URLSearchParams();
-  if (q) baseSearch.set("q", q);
-  if (position !== "ALL") baseSearch.set("primaryPosition", position);
+  const baseSearch = buildBaseSearch({ q, position, advanced });
+  const totalResults = result.kind === "ok" ? result.data.total : 0;
 
   return (
     <>
@@ -115,18 +182,7 @@ export default async function AtletasPage({
             paginação para navegar.
           </p>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card/40 px-3 py-2 text-sm hover:bg-accent/40 transition-colors disabled:opacity-60"
-          disabled
-          title="Painel de filtros avançados em construção"
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-          Filtros avançados
-          <span className="rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5">
-            {result.kind === "ok" ? result.data.total : 0}
-          </span>
-        </button>
+        <AdvancedFilters current={advanced} totalResults={totalResults} />
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
