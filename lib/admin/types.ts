@@ -193,3 +193,62 @@ export interface AdminMatchListResponse {
   total: number;
   hasMore: boolean;
 }
+
+export interface AdminPlayItem {
+  id: string;
+  playType: string;
+  videoUrl: string | null;
+  thumbnailUrl: string | null;
+  photoUrl: string | null;
+  rating: number | null;
+  observations: string | null;
+  classifications: string[];
+  createdAt: string;
+  match: { id: string; date: string; adversaryTeam: string } | null;
+}
+
+export interface AdminPlaysResponse {
+  items: AdminPlayItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export type AdminAchievementType = "COLLECTIVE" | "INDIVIDUAL";
+
+export interface AdminAchievementItem {
+  id: string;
+  name: string;
+  category: string;
+  year: number;
+  type: AdminAchievementType;
+  createdAt: string;
+}
+
+export interface AdminAchievementsResponse {
+  items: AdminAchievementItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export interface AdminTeamHistoryTeam {
+  id: string;
+  name: string;
+  acronym: string;
+  shieldPhoto: string | null;
+}
+
+export interface AdminTeamHistoryItem {
+  id: string;
+  startDate: string;
+  endDate: string | null;
+  team: AdminTeamHistoryTeam;
+}
+
+export interface AdminTeamHistoryResponse {
+  items: AdminTeamHistoryItem[];
+  currentTeam: AdminTeamHistoryItem | null;
+}

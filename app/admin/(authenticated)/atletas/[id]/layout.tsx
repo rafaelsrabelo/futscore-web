@@ -77,7 +77,16 @@ export default async function AthleteDetailLayout({
             href: `/admin/atletas/${id}/lances`,
             label: "Lances",
             badge: counts.plays,
-            disabled: true,
+          },
+          {
+            href: `/admin/atletas/${id}/conquistas`,
+            label: "Conquistas",
+            badge: counts.achievements,
+          },
+          {
+            href: `/admin/atletas/${id}/times`,
+            label: "Times",
+            badge: counts.teamHistory,
           },
         ]}
       />
