@@ -1,7 +1,5 @@
 import {
   Activity,
-  AlertTriangle,
-  ArrowLeft,
   Award,
   Calendar,
   Footprints,
@@ -13,13 +11,11 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { API_URL, fetchAuthed } from "@/lib/admin/api";
+import { getAdminAthleteDetail } from "@/lib/admin/athletes";
 import type {
   AdminAthleteDetail,
   AdminAthleteDetailProfile,
+  AdminAthleteDetailUser,
 } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 
@@ -99,101 +95,24 @@ function formatMoney(value: number, currency: string): string {
   }
 }
 
-function initialsOf(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
-type FetchResult =
-  | { kind: "ok"; data: AdminAthleteDetail }
-  | { kind: "auth-error"; status: 401 | 403 }
-  | { kind: "not-found" }
-  | { kind: "http-error"; status: number; url: string }
-  | { kind: "network-error"; url: string };
-
-async function fetchAthleteDetail(id: string): Promise<FetchResult> {
-  const path = `/admin/athletes/${id}`;
-  const url = `${API_URL}${path}`;
-  let res: Response;
-  try {
-    res = await fetchAuthed(path, { cache: "no-store" });
-  } catch (err) {
-    console.error("[atleta-detail] network error", { url, err });
-    return { kind: "network-error", url };
-  }
-  if (res.status === 401 || res.status === 403) {
-    return { kind: "auth-error", status: res.status as 401 | 403 };
-  }
-  if (res.status === 404) {
-    return { kind: "not-found" };
-  }
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.error("[atleta-detail] GET not ok", {
-      status: res.status,
-      url,
-      body: body.slice(0, 300),
-    });
-    return { kind: "http-error", status: res.status, url };
-  }
-  const data = (await res.json()) as AdminAthleteDetail;
-  return { kind: "ok", data };
-}
-
-export default async function AtletaDetailPage({
+export default async function AtletaOverviewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const result = await fetchAthleteDetail(id);
+  const result = await getAdminAthleteDetail(id);
 
-  if (result.kind === "auth-error") redirect("/admin/login");
-  if (result.kind === "not-found") notFound();
-
-  if (result.kind !== "ok") {
-    return <BackendError result={result} />;
-  }
+  // Layout já trata auth-error, not-found e http-error. Se chegou aqui sem ok
+  // (edge), renderiza nada pra não duplicar erro.
+  if (result.kind !== "ok") return null;
 
   const { profile, address, user, counts, playsByType, subscription } =
     result.data;
 
   return (
     <>
-      <Link
-        href="/admin/atletas"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Voltar para atletas
-      </Link>
-
-      <AthleteHeader profile={profile} user={user} />
-
-      <div className="mt-6 border-b border-border/60">
-        <nav className="flex gap-6">
-          <TabLink href={`/admin/atletas/${id}`} active>
-            Visão geral
-          </TabLink>
-          <TabLink
-            href={`/admin/atletas/${id}/partidas`}
-            disabled
-            badge={counts.matches}
-          >
-            Partidas
-          </TabLink>
-          <TabLink href={`/admin/atletas/${id}/lances`} disabled badge={counts.plays}>
-            Lances
-          </TabLink>
-        </nav>
-      </div>
-
-      <div className="grid grid-cols-4 gap-3 mt-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <CountCard
           icon={<Calendar className="w-4 h-4" />}
           label="Partidas"
@@ -229,145 +148,6 @@ export default async function AtletaDetailPage({
         <PlaysByTypeSection plays={playsByType} />
       )}
     </>
-  );
-}
-
-function AthleteHeader({
-  profile,
-  user,
-}: {
-  profile: AdminAthleteDetailProfile;
-  user: AdminAthleteDetail["user"];
-}) {
-  const age = profile.age ?? ageFromBirth(profile.birthDate);
-  const displayName = profile.nickname || user.name;
-
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-xl border border-border/60 bg-card/50">
-      <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted ring-2 ring-primary/20 shrink-0">
-        {profile.profilePhoto ? (
-          <Image
-            src={profile.profilePhoto}
-            alt={user.name}
-            fill
-            sizes="80px"
-            className="object-cover"
-          />
-        ) : (
-          <div className="flex items-center justify-center w-full h-full text-lg font-semibold text-muted-foreground">
-            {initialsOf(user.name)}
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-2xl font-bold truncate">{displayName}</h1>
-          <StatusBadge isActive={user.isActive} />
-        </div>
-        {profile.nickname && profile.nickname !== user.name && (
-          <p className="text-sm text-muted-foreground">{user.name}</p>
-        )}
-        <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
-          <Pill>
-            {POSITION_LABELS[profile.primaryPosition] ?? profile.primaryPosition}
-          </Pill>
-          {profile.secondaryPosition && (
-            <Pill muted>
-              {POSITION_LABELS[profile.secondaryPosition] ??
-                profile.secondaryPosition}
-            </Pill>
-          )}
-          {profile.currentClub && <Pill muted>{profile.currentClub}</Pill>}
-          {age != null && <Pill muted>{age} anos</Pill>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pill({
-  children,
-  muted,
-}: {
-  children: React.ReactNode;
-  muted?: boolean;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 font-medium",
-        muted
-          ? "bg-muted text-muted-foreground"
-          : "bg-primary/15 text-primary"
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-function StatusBadge({ isActive }: { isActive: boolean }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-        isActive
-          ? "bg-primary/15 text-primary"
-          : "bg-muted text-muted-foreground"
-      )}
-    >
-      <span
-        className={cn(
-          "w-1.5 h-1.5 rounded-full",
-          isActive ? "bg-primary" : "bg-muted-foreground/50"
-        )}
-      />
-      {isActive ? "Ativo" : "Inativo"}
-    </span>
-  );
-}
-
-function TabLink({
-  href,
-  children,
-  active,
-  disabled,
-  badge,
-}: {
-  href: string;
-  children: React.ReactNode;
-  active?: boolean;
-  disabled?: boolean;
-  badge?: number;
-}) {
-  const className = cn(
-    "inline-flex items-center gap-2 px-1 py-2.5 text-sm border-b-2 -mb-px transition-colors",
-    active
-      ? "border-primary text-foreground font-medium"
-      : "border-transparent text-muted-foreground",
-    disabled && "opacity-50 pointer-events-none"
-  );
-  const content = (
-    <>
-      {children}
-      {badge != null && badge > 0 && (
-        <span className="rounded-full bg-muted text-muted-foreground text-[10px] font-semibold px-1.5 py-0.5">
-          {badge}
-        </span>
-      )}
-      {disabled && (
-        <span className="text-[9px] uppercase tracking-wider text-muted-foreground bg-muted rounded px-1.5 py-0.5">
-          em breve
-        </span>
-      )}
-    </>
-  );
-  if (disabled) return <span className={className}>{content}</span>;
-  return (
-    <Link href={href} className={className}>
-      {content}
-    </Link>
   );
 }
 
@@ -444,7 +224,7 @@ function ProfileSection({
   user,
 }: {
   profile: AdminAthleteDetailProfile;
-  user: AdminAthleteDetail["user"];
+  user: AdminAthleteDetailUser;
 }) {
   const age = profile.age ?? ageFromBirth(profile.birthDate);
   const heightCm = heightInCm(profile.height);
@@ -458,7 +238,9 @@ function ProfileSection({
     <Section title="Perfil do atleta" className="lg:col-span-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
         <Row label="Nome" value={user.name} />
-        {profile.nickname && <Row label="Nickname" value={`@${profile.nickname}`} />}
+        {profile.nickname && (
+          <Row label="Nickname" value={`@${profile.nickname}`} />
+        )}
         <Row
           label="Idade"
           value={age != null ? `${age} anos` : "—"}
@@ -471,13 +253,16 @@ function ProfileSection({
         />
         <Row
           label="Posição principal"
-          value={POSITION_LABELS[profile.primaryPosition] ?? profile.primaryPosition}
+          value={
+            POSITION_LABELS[profile.primaryPosition] ?? profile.primaryPosition
+          }
         />
         <Row
           label="Posição secundária"
           value={
             profile.secondaryPosition
-              ? POSITION_LABELS[profile.secondaryPosition] ?? profile.secondaryPosition
+              ? POSITION_LABELS[profile.secondaryPosition] ??
+                profile.secondaryPosition
               : "—"
           }
         />
@@ -557,11 +342,7 @@ function ExternalPill({ href, label }: { href: string; label: string }) {
   );
 }
 
-function AccountSection({
-  user,
-}: {
-  user: AdminAthleteDetail["user"];
-}) {
+function AccountSection({ user }: { user: AdminAthleteDetailUser }) {
   return (
     <Section title="Conta">
       <Row
@@ -673,44 +454,5 @@ function PlaysByTypeSection({ plays }: { plays: Record<string, number> }) {
         ))}
       </div>
     </section>
-  );
-}
-
-function BackendError({
-  result,
-}: {
-  result: Extract<FetchResult, { kind: "http-error" } | { kind: "network-error" }>;
-}) {
-  const isHttp = result.kind === "http-error";
-  const title = isHttp
-    ? `Falha ao carregar atleta (HTTP ${result.status})`
-    : "Falha ao conectar com a API";
-  const hint =
-    isHttp && result.status === 404
-      ? "Endpoint GET /admin/athletes/:id não encontrado. Confirme se BE-08 subiu em produção."
-      : isHttp && result.status >= 500
-        ? "A API retornou erro interno. Pode ser cold start do Render — tente novamente em alguns segundos."
-        : "Verifique a variável API_URL e se o backend está acessível.";
-
-  return (
-    <>
-      <Link
-        href="/admin/atletas"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Voltar para atletas
-      </Link>
-      <div className="border-2 border-dashed border-destructive/40 rounded-xl bg-destructive/5 py-10 px-6 flex flex-col items-center text-center">
-        <div className="w-12 h-12 rounded-full bg-destructive/15 flex items-center justify-center mb-3 text-destructive">
-          <AlertTriangle className="w-6 h-6" />
-        </div>
-        <h3 className="text-base font-semibold mb-1">{title}</h3>
-        <p className="text-sm text-muted-foreground max-w-md">{hint}</p>
-        <code className="mt-3 text-[11px] text-muted-foreground bg-card/60 border border-border/60 rounded px-2 py-1 break-all max-w-full">
-          {result.url}
-        </code>
-      </div>
-    </>
   );
 }

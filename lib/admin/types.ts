@@ -1,4 +1,10 @@
-import type { DominantFoot, Gender, Position } from "@/lib/types";
+import type {
+  DominantFoot,
+  Gender,
+  MatchResult,
+  MatchStatus,
+  Position,
+} from "@/lib/types";
 
 export interface AdminUser {
   userId: string;
@@ -166,4 +172,24 @@ export interface AdminAthleteDetail {
   counts: AdminAthleteDetailCounts;
   playsByType?: Record<string, number>;
   subscription: AdminAthleteDetailSubscription | null;
+}
+
+export interface AdminMatchListItem {
+  id: string;
+  date: string;
+  adversaryTeam: string;
+  myTeamScore: number | null;
+  adversaryScore: number | null;
+  status: MatchStatus;
+  result: MatchResult;
+  playsCount: number;
+  competition: { id?: string; name: string } | null;
+}
+
+export interface AdminMatchListResponse {
+  items: AdminMatchListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
 }
