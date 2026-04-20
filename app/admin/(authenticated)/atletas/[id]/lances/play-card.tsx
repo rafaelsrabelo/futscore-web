@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { AdminPlayItem } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 import { AttachVideoDialog } from "./attach-video-dialog";
+import { VideoPlayerDialog } from "./video-player-dialog";
 
 const PLAY_TYPE_LABELS: Record<string, string> = {
   GOAL: "Gol",
@@ -54,10 +55,12 @@ function formatDate(iso: string): string {
 
 export function PlayCard({ play }: { play: AdminPlayItem }) {
   const [attachOpen, setAttachOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
   const media = play.thumbnailUrl ?? play.photoUrl;
   const hasVideo = Boolean(play.videoUrl);
   const label = PLAY_TYPE_LABELS[play.playType] ?? play.playType;
   const canAttach = !hasVideo;
+  const canPlay = hasVideo;
 
   const cardContent = (
     <>
@@ -138,25 +141,29 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
     </>
   );
 
-  const articleClass = cn(
+  const cardClass = cn(
     "group relative overflow-hidden rounded-xl border border-border/60 bg-card/50 transition-colors text-left w-full",
-    canAttach
-      ? "cursor-pointer hover:border-primary/60 hover:bg-card/70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-      : "hover:border-primary/40"
+    "cursor-pointer hover:border-primary/60 hover:bg-card/70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
   );
+
+  function handleClick() {
+    if (canPlay) setVideoOpen(true);
+    else if (canAttach) setAttachOpen(true);
+  }
 
   return (
     <>
-      {canAttach ? (
-        <button
-          type="button"
-          onClick={() => setAttachOpen(true)}
-          className={articleClass}
-        >
-          {cardContent}
-        </button>
-      ) : (
-        <article className={articleClass}>{cardContent}</article>
+      <button type="button" onClick={handleClick} className={cardClass}>
+        {cardContent}
+      </button>
+
+      {canPlay && (
+        <VideoPlayerDialog
+          play={play}
+          label={label}
+          open={videoOpen}
+          onOpenChange={setVideoOpen}
+        />
       )}
 
       {canAttach && (
