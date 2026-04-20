@@ -194,6 +194,17 @@ export interface AdminMatchListResponse {
   hasMore: boolean;
 }
 
+export type AdminPlayClassificationType =
+  | "PHYSICAL"
+  | "TACTICAL"
+  | "TECHNICAL"
+  | "MENTAL";
+
+export interface AdminPlayClassification {
+  id: string;
+  classification: AdminPlayClassificationType;
+}
+
 export interface AdminPlayItem {
   id: string;
   playType: string;
@@ -202,7 +213,7 @@ export interface AdminPlayItem {
   photoUrl: string | null;
   rating: number | null;
   observations: string | null;
-  classifications: string[];
+  classifications: AdminPlayClassification[];
   createdAt: string;
   match: { id: string; date: string; adversaryTeam: string } | null;
 }

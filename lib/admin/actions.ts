@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { fetchAuthed } from "./api";
 import {
   ACCESS_COOKIE_MAX_AGE,
   ADMIN_ACCESS_COOKIE,
@@ -122,4 +123,117 @@ export async function logoutAction(): Promise<void> {
   store.delete(ADMIN_ACCESS_COOKIE);
   store.delete(ADMIN_REFRESH_COOKIE);
   redirect("/admin/login");
+}
+
+export interface CreatePlayInput {
+  matchId: string;
+  playType: string;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  photoUrl?: string;
+  rating?: number;
+  observations?: string;
+  classifications?: string[];
+}
+
+export type CreatePlayResult =
+  | { ok: true; playId: string }
+  | { ok: false; error: string };
+
+export async function createPlayAction(
+  input: CreatePlayInput
+): Promise<CreatePlayResult> {
+  if (!input.matchId || !input.playType) {
+    return { ok: false, error: "Partida e tipo de lance são obrigatórios." };
+  }
+
+  const body: Record<string, unknown> = { playType: input.playType };
+  if (input.videoUrl) body.videoUrl = input.videoUrl;
+  if (input.thumbnailUrl) body.thumbnailUrl = input.thumbnailUrl;
+  if (input.photoUrl) body.photoUrl = input.photoUrl;
+  if (input.rating) body.rating = input.rating;
+  if (input.observations) body.observations = input.observations;
+  if (input.classifications?.length) body.classifications = input.classifications;
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/matches/${input.matchId}/plays`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[createPlayAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    console.error("[createPlayAction] not ok", {
+      status: res.status,
+      body: txt.slice(0, 300),
+    });
+    if (res.status === 404) {
+      return { ok: false, error: "Partida não encontrada." };
+    }
+    if (res.status === 400) {
+      return { ok: false, error: "Dados do lance inválidos." };
+    }
+    return { ok: false, error: `Falha ao salvar (HTTP ${res.status}).` };
+  }
+
+  const data = (await res.json().catch(() => null)) as
+    | { play?: { id: string }; id?: string }
+    | null;
+  return { ok: true, playId: data?.play?.id ?? data?.id ?? "" };
+}
+
+export interface AttachPlayVideoInput {
+  playId: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+}
+
+export type AttachPlayVideoResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function attachPlayVideoAction(
+  input: AttachPlayVideoInput
+): Promise<AttachPlayVideoResult> {
+  if (!input.playId || !input.videoUrl) {
+    return { ok: false, error: "ID do lance e URL do vídeo são obrigatórios." };
+  }
+
+  const body: Record<string, unknown> = { videoUrl: input.videoUrl };
+  if (input.thumbnailUrl) body.thumbnailUrl = input.thumbnailUrl;
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/plays/${input.playId}/video-url`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[attachPlayVideoAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    console.error("[attachPlayVideoAction] not ok", {
+      status: res.status,
+      body: txt.slice(0, 300),
+    });
+    if (res.status === 404) {
+      return { ok: false, error: "Lance não encontrado." };
+    }
+    if (res.status === 400) {
+      return { ok: false, error: "URL de vídeo inválida." };
+    }
+    return { ok: false, error: `Falha ao anexar vídeo (HTTP ${res.status}).` };
+  }
+
+  return { ok: true };
 }

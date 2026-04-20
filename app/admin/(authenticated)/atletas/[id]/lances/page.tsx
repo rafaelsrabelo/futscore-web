@@ -1,65 +1,23 @@
-import { Activity, Calendar, Play, Star, VideoOff } from "lucide-react";
-import Image from "next/image";
+import { Activity } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BackendErrorCard } from "@/components/admin/backend-error";
 import { EmptyState } from "@/components/admin/page-header";
-import { getAdminAthletePlays } from "@/lib/admin/athletes";
-import type { AdminPlayItem } from "@/lib/admin/types";
+import {
+  getAdminAthleteMatches,
+  getAdminAthletePlays,
+} from "@/lib/admin/athletes";
 import { cn } from "@/lib/utils";
 import { Pagination } from "../../pagination";
+import { AddPlayDialog, type MatchOption } from "./add-play-dialog";
+import { PlayCard } from "./play-card";
 
 const PAGE_SIZE = 24;
-
-const PLAY_TYPE_LABELS: Record<string, string> = {
-  GOAL: "Gol",
-  ASSIST: "Assistência",
-  DIFFICULT_SAVE: "Defesa difícil",
-  EASY_SAVE: "Defesa fácil",
-  PASS: "Passe",
-  KEY_PASS: "Passe decisivo",
-  DRIBBLE: "Drible",
-  TACKLE: "Desarme",
-  INTERCEPTION: "Interceptação",
-  FOUL_COMMITTED: "Falta cometida",
-  FOUL_RECEIVED: "Falta sofrida",
-  YELLOW_CARD: "Cartão amarelo",
-  RED_CARD: "Cartão vermelho",
-  HEADER: "Cabeceio",
-  SHOT_ON_TARGET: "Finalização no alvo",
-  SHOT_OFF_TARGET: "Finalização fora",
-  BEST_MOMENTS: "Melhores momentos",
-  ANTICIPATION: "Antecipação",
-  LONG_PASS: "Lançamento",
-  FREE_KICK: "Falta direta",
-  CROSS: "Cruzamento",
-  CORNER_KICK: "Escanteio",
-  PENALTY: "Pênalti",
-  PENALTY_SAVE: "Defesa de pênalti",
-};
-
-const CLASSIFICATION_LABELS: Record<string, string> = {
-  PHYSICAL: "Físico",
-  TACTICAL: "Tático",
-  TECHNICAL: "Técnico",
-  MENTAL: "Mental",
-};
 
 interface SearchParams {
   page?: string;
   hasVideo?: string;
   playType?: string;
-}
-
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 function buildQuery(sp: SearchParams): { apiQuery: string; base: URLSearchParams } {
@@ -79,6 +37,19 @@ function buildQuery(sp: SearchParams): { apiQuery: string; base: URLSearchParams
   return { apiQuery: api.toString(), base };
 }
 
+async function fetchMatchOptions(athleteId: string): Promise<MatchOption[]> {
+  const res = await getAdminAthleteMatches(
+    athleteId,
+    new URLSearchParams({ page: "1", pageSize: "50" }).toString()
+  );
+  if (res.kind !== "ok") return [];
+  return res.data.items.map((m) => ({
+    id: m.id,
+    date: m.date,
+    adversaryTeam: m.adversaryTeam,
+  }));
+}
+
 export default async function AtletaLancesPage({
   params,
   searchParams,
@@ -89,7 +60,11 @@ export default async function AtletaLancesPage({
   const { id } = await params;
   const sp = await searchParams;
   const { apiQuery, base } = buildQuery(sp);
-  const result = await getAdminAthletePlays(id, apiQuery);
+
+  const [result, matches] = await Promise.all([
+    getAdminAthletePlays(id, apiQuery),
+    fetchMatchOptions(id),
+  ]);
 
   if (result.kind === "auth-error") redirect("/admin/login");
 
@@ -107,7 +82,10 @@ export default async function AtletaLancesPage({
 
   return (
     <>
-      <LancesFilters current={sp} pathname={`/admin/atletas/${id}/lances`} />
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <LancesFilters current={sp} pathname={`/admin/atletas/${id}/lances`} />
+        <AddPlayDialog matches={matches} />
+      </div>
 
       {data.items.length === 0 ? (
         <EmptyState
@@ -163,7 +141,7 @@ function LancesFilters({
   }
 
   return (
-    <div className="flex flex-wrap gap-1 rounded-lg border border-border/60 bg-card/40 p-1 w-fit mb-4">
+    <div className="flex flex-wrap gap-1 rounded-lg border border-border/60 bg-card/40 p-1 w-fit">
       {items.map((item) => {
         const isActive = item.value === active;
         return (
@@ -186,78 +164,3 @@ function LancesFilters({
   );
 }
 
-function PlayCard({ play }: { play: AdminPlayItem }) {
-  const media = play.thumbnailUrl ?? play.photoUrl;
-  const label = PLAY_TYPE_LABELS[play.playType] ?? play.playType;
-
-  return (
-    <article className="group relative overflow-hidden rounded-xl border border-border/60 bg-card/50 hover:border-primary/40 transition-colors">
-      <div className="relative aspect-video bg-muted/60">
-        {media ? (
-          <Image
-            src={media}
-            alt={label}
-            fill
-            sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
-            className="object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
-            <VideoOff className="w-6 h-6 mb-1" />
-            <span className="text-xs font-medium">Sem vídeo</span>
-          </div>
-        )}
-        {play.videoUrl && (
-          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-              <Play className="w-4 h-4 text-black ml-0.5" />
-            </div>
-          </div>
-        )}
-        <div className="absolute top-2 left-2">
-          <span className="rounded-md bg-black/60 text-white text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 backdrop-blur-sm">
-            {label}
-          </span>
-        </div>
-        {play.rating != null && (
-          <div className="absolute top-2 right-2 flex items-center gap-0.5 rounded-md bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 backdrop-blur-sm">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            {play.rating}
-          </div>
-        )}
-      </div>
-
-      <div className="p-3">
-        {play.match ? (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="w-3 h-3 shrink-0" />
-            <span className="truncate">
-              {formatDate(play.match.date)} · vs {play.match.adversaryTeam}
-            </span>
-          </div>
-        ) : (
-          <div className="text-xs text-muted-foreground">Sem partida vinculada</div>
-        )}
-
-        {play.classifications.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {play.classifications.map((c) => (
-              <span
-                key={c}
-                className="text-[9px] font-medium uppercase tracking-wider rounded bg-muted text-muted-foreground px-1.5 py-0.5"
-              >
-                {CLASSIFICATION_LABELS[c] ?? c}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {play.observations && (
-          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-            {play.observations}
-          </p>
-        )}
-      </div>
-    </article>
-  );
-}
