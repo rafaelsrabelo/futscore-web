@@ -183,9 +183,9 @@ export async function createPlayAction(
   }
 
   const data = (await res.json().catch(() => null)) as
-    | { play?: { id: string }; id?: string }
+    | { id: string }
     | null;
-  return { ok: true, playId: data?.play?.id ?? data?.id ?? "" };
+  return { ok: true, playId: data?.id ?? "" };
 }
 
 export interface AttachPlayVideoInput {
