@@ -237,3 +237,83 @@ export async function attachPlayVideoAction(
 
   return { ok: true };
 }
+
+export type RemovePlayVideoResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function removePlayVideoAction(input: {
+  playId: string;
+}): Promise<RemovePlayVideoResult> {
+  if (!input.playId) {
+    return { ok: false, error: "ID do lance é obrigatório." };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/plays/${input.playId}/video-url`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[removePlayVideoAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    console.error("[removePlayVideoAction] not ok", {
+      status: res.status,
+      body: txt.slice(0, 300),
+    });
+    if (res.status === 404) {
+      return { ok: false, error: "Lance não encontrado." };
+    }
+    return {
+      ok: false,
+      error: `Falha ao remover vídeo (HTTP ${res.status}).`,
+    };
+  }
+
+  return { ok: true };
+}
+
+export type DeletePlayResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function deletePlayAction(input: {
+  playId: string;
+}): Promise<DeletePlayResult> {
+  if (!input.playId) {
+    return { ok: false, error: "ID do lance é obrigatório." };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/plays/${input.playId}`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[deletePlayAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    console.error("[deletePlayAction] not ok", {
+      status: res.status,
+      body: txt.slice(0, 300),
+    });
+    if (res.status === 404) {
+      return { ok: false, error: "Lance não encontrado." };
+    }
+    return {
+      ok: false,
+      error: `Falha ao apagar lance (HTTP ${res.status}).`,
+    };
+  }
+
+  return { ok: true };
+}

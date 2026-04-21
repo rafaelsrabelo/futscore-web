@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { AdminPlayItem } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 import { AttachVideoDialog } from "./attach-video-dialog";
+import { PlayActionsMenu } from "./play-actions-menu";
 import { VideoPlayerDialog } from "./video-player-dialog";
 
 const PLAY_TYPE_LABELS: Record<string, string> = {
@@ -62,6 +63,10 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
   const canAttach = !hasVideo;
   const canPlay = hasVideo;
 
+  const playLabelForMenu = [label, play.match?.adversaryTeam]
+    .filter(Boolean)
+    .join(" · ");
+
   const cardContent = (
     <>
       <div className="relative aspect-video bg-muted/60">
@@ -97,12 +102,19 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
             {label}
           </span>
         </div>
-        {play.rating != null && (
-          <div className="absolute top-2 right-2 flex items-center gap-0.5 rounded-md bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 backdrop-blur-sm">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            {play.rating}
-          </div>
-        )}
+        <div className="absolute top-2 right-2 flex items-center gap-1.5">
+          {play.rating != null && (
+            <div className="flex items-center gap-0.5 rounded-md bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 backdrop-blur-sm">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              {play.rating}
+            </div>
+          )}
+          <PlayActionsMenu
+            playId={play.id}
+            hasVideo={hasVideo}
+            playLabel={playLabelForMenu}
+          />
+        </div>
       </div>
 
       <div className="p-3">
@@ -151,11 +163,24 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
     else if (canAttach) setAttachOpen(true);
   }
 
+  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleClick();
+    }
+  }
+
   return (
     <>
-      <button type="button" onClick={handleClick} className={cardClass}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        className={cardClass}
+      >
         {cardContent}
-      </button>
+      </div>
 
       {canPlay && (
         <VideoPlayerDialog

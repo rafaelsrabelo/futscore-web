@@ -25,11 +25,13 @@ export function AttachVideoDialog({
   open,
   onOpenChange,
   playLabel,
+  mode = "attach",
 }: {
   playId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   playLabel?: string;
+  mode?: "attach" | "replace";
 }) {
   const router = useRouter();
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -101,7 +103,9 @@ export function AttachVideoDialog({
     >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Anexar vídeo ao lance</DialogTitle>
+          <DialogTitle>
+            {mode === "replace" ? "Trocar vídeo do lance" : "Anexar vídeo ao lance"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -149,7 +153,9 @@ export function AttachVideoDialog({
                 ? "Enviando..."
                 : stage === "saving"
                   ? "Salvando..."
-                  : "Anexar vídeo"}
+                  : mode === "replace"
+                    ? "Trocar vídeo"
+                    : "Anexar vídeo"}
             </Button>
           </DialogFooter>
         </form>
