@@ -102,19 +102,6 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
             {label}
           </span>
         </div>
-        <div className="absolute top-2 right-2 flex items-center gap-1.5">
-          {play.rating != null && (
-            <div className="flex items-center gap-0.5 rounded-md bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 backdrop-blur-sm">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              {play.rating}
-            </div>
-          )}
-          <PlayActionsMenu
-            playId={play.id}
-            hasVideo={hasVideo}
-            playLabel={playLabelForMenu}
-          />
-        </div>
       </div>
 
       <div className="p-3">
@@ -154,7 +141,7 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
   );
 
   const cardClass = cn(
-    "group relative overflow-hidden rounded-xl border border-border/60 bg-card/50 transition-colors text-left w-full",
+    "relative overflow-hidden rounded-xl border border-border/60 bg-card/50 transition-colors text-left w-full",
     "cursor-pointer hover:border-primary/60 hover:bg-card/70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
   );
 
@@ -171,7 +158,7 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
   }
 
   return (
-    <>
+    <div className="group relative">
       <div
         role="button"
         tabIndex={0}
@@ -180,6 +167,24 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
         className={cardClass}
       >
         {cardContent}
+      </div>
+
+      <div
+        className="absolute top-2 right-2 z-10 flex items-center gap-1.5"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        {play.rating != null && (
+          <div className="flex items-center gap-0.5 rounded-md bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 backdrop-blur-sm pointer-events-none">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            {play.rating}
+          </div>
+        )}
+        <PlayActionsMenu
+          playId={play.id}
+          hasVideo={hasVideo}
+          playLabel={playLabelForMenu}
+        />
       </div>
 
       {canPlay && (
@@ -201,6 +206,6 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
             .join(" · ")}
         />
       )}
-    </>
+    </div>
   );
 }
