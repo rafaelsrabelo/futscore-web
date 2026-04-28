@@ -36,7 +36,7 @@ export async function fetchAuthed(path: string, init: RequestInit = {}) {
 
   const reqHeaders = new Headers(init.headers);
   if (token) reqHeaders.set("Authorization", `Bearer ${token}`);
-  if (init.body && !reqHeaders.has("Content-Type")) {
+  if (init.body && !(init.body instanceof FormData) && !reqHeaders.has("Content-Type")) {
     reqHeaders.set("Content-Type", "application/json");
   }
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Bell,
   CalendarDays,
+  Database,
   Eye,
   KeyRound,
   LayoutDashboard,
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/olheiros", label: "Olheiros", icon: Eye },
   { href: "/admin/acessos", label: "Acessos", icon: KeyRound },
   { href: "/admin/notificacoes", label: "Notificações", icon: Bell },
+  { href: "/admin/dados", label: "Dados", icon: Database },
   { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ];
 
