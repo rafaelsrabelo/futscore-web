@@ -33,11 +33,24 @@ interface ImportResult {
   errors: ImportError[];
 }
 
+const CHUNK_SIZE = 500;
+
 type ImportState =
   | { status: "idle" }
-  | { status: "loading" }
+  | { status: "loading"; chunk: number; total: number }
   | { status: "error"; message: string }
   | { status: "done"; result: ImportResult };
+
+function splitCsvChunks(text: string): string[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+  const [header, ...rows] = lines;
+  const chunks: string[] = [];
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const slice = rows.slice(i, i + CHUNK_SIZE);
+    chunks.push(header + "\n" + slice.join("\n"));
+  }
+  return chunks;
+}
 
 export function ImportCard() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -63,34 +76,64 @@ export function ImportCard() {
 
   async function handleImport() {
     if (!file) return;
-    setState({ status: "loading" });
 
-    const form = new FormData();
-    form.append("file", file);
-
+    let text: string;
     try {
-      const res = await fetch("/admin/api/athletes/import", {
-        method: "POST",
-        body: form,
-      });
+      text = await file.text();
+    } catch {
+      setState({ status: "error", message: "Não foi possível ler o arquivo." });
+      return;
+    }
+
+    const chunks = splitCsvChunks(text);
+    if (chunks.length === 0) {
+      setState({ status: "error", message: "O arquivo CSV está vazio." });
+      return;
+    }
+
+    const accumulated: ImportResult = { created: 0, updated: 0, total: 0, errors: [] };
+
+    for (let i = 0; i < chunks.length; i++) {
+      setState({ status: "loading", chunk: i + 1, total: chunks.length });
+
+      const blob = new Blob([chunks[i]], { type: "text/csv" });
+      const form = new FormData();
+      form.append("file", blob, file.name);
+
+      let res: Response;
+      try {
+        res = await fetch("/admin/api/athletes/import", { method: "POST", body: form });
+      } catch {
+        setState({ status: "error", message: "Falha de conexão. Verifique a rede e tente novamente." });
+        return;
+      }
 
       const json = await res.json().catch(() => null);
 
       if (!res.ok) {
-        const message =
-          (json as { message?: string } | null)?.message ??
-          `Erro ao importar (HTTP ${res.status}).`;
-        setState({ status: "error", message });
+        if (res.status === 401 || res.status === 403) {
+          setState({ status: "error", message: "Sessão expirada. Faça login novamente." });
+        } else {
+          const message =
+            (json as { message?: string } | null)?.message ??
+            `Erro HTTP ${res.status} no lote ${i + 1}.`;
+          setState({ status: "error", message });
+        }
         return;
       }
 
-      setState({ status: "done", result: json as ImportResult });
-    } catch {
-      setState({
-        status: "error",
-        message: "Falha de conexão. Verifique a rede e tente novamente.",
-      });
+      const batch = json as ImportResult;
+      accumulated.created += batch.created;
+      accumulated.updated += batch.updated;
+      accumulated.total += batch.total;
+      // Offset row numbers so they reference the original file
+      const rowOffset = i * CHUNK_SIZE;
+      for (const err of batch.errors) {
+        accumulated.errors.push({ ...err, row: err.row + rowOffset });
+      }
     }
+
+    setState({ status: "done", result: accumulated });
   }
 
   function reset() {
@@ -191,7 +234,11 @@ export function ImportCard() {
               ) : (
                 <FileUp className="w-4 h-4" />
               )}
-              {loading ? "Importando…" : "Importar"}
+              {state.status === "loading"
+                ? state.total > 1
+                  ? `Processando lote ${state.chunk} de ${state.total}…`
+                  : "Importando…"
+                : "Importar"}
             </Button>
             {file && !loading && (
               <Button variant="outline" onClick={reset}>
