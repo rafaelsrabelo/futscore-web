@@ -30,8 +30,8 @@ function initialsOf(name: string): string {
  * Admin API manda altura em metros (1.78). Alguns endpoints antigos mandam em cm.
  * Heurística simples: valores < 3 tratamos como metros.
  */
-function heightInCm(height: number): number {
-  if (!Number.isFinite(height) || height <= 0) return 0;
+function heightInCm(height: number | null): number {
+  if (height == null || !Number.isFinite(height) || height <= 0) return 0;
   return height < 3 ? Math.round(height * 100) : Math.round(height);
 }
 
@@ -51,8 +51,10 @@ export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="text-[10px] font-bold tracking-wider text-muted-foreground">
-              {POSITION_LABELS[athlete.primaryPosition] ??
-                athlete.primaryPosition}
+              {athlete.primaryPosition
+                ? POSITION_LABELS[athlete.primaryPosition] ??
+                  athlete.primaryPosition
+                : "—"}
               {athlete.age != null && ` · ${athlete.age} ANOS`}
             </span>
             <span className="text-[11px] text-muted-foreground truncate">
@@ -104,7 +106,11 @@ export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
         <Stat label="PESO" value={athlete.weight ? String(athlete.weight) : "—"} unit={athlete.weight ? "kg" : undefined} />
         <Stat
           label="PÉ"
-          value={FOOT_LABELS[athlete.dominantFoot] ?? "—"}
+          value={
+            athlete.dominantFoot
+              ? FOOT_LABELS[athlete.dominantFoot] ?? athlete.dominantFoot
+              : "—"
+          }
         />
       </div>
 

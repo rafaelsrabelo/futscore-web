@@ -48,15 +48,15 @@ export interface AdminAthleteListItem {
   profilePhoto: string | null;
   birthDate: string | null;
   age: number | null;
-  gender: Gender;
-  primaryPosition: Position;
+  gender: Gender | null;
+  primaryPosition: Position | null;
   secondaryPosition: Position | null;
-  dominantFoot: DominantFoot;
+  dominantFoot: DominantFoot | null;
   currentClub: string | null;
   /** Altura em METROS (ex.: 1.78). Pra exibir em cm, multiplicar por 100. */
-  height: number;
+  height: number | null;
   /** Peso em kg. */
-  weight: number;
+  weight: number | null;
   hasManager: boolean;
   cpf: string | null;
   createdAt: string;
