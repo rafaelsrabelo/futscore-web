@@ -15,6 +15,7 @@ import {
   createMatchSchema,
   createTeamHistorySchema,
   loginSchema,
+  resetPasswordSchema,
   updateAchievementSchema,
   updateAthleteSchema,
   updateMatchResultSchema,
@@ -1043,5 +1044,51 @@ export async function deleteTeamHistoryAction(
   return {
     ok: false,
     error: message ?? `Falha ao excluir (HTTP ${res.status}).`,
+  };
+}
+
+// ---------- Reset password ----------
+
+export async function resetAthletePasswordAction(
+  athleteId: string,
+  password: string
+): Promise<SimpleResult> {
+  if (!athleteId) return { ok: false, error: "ID do atleta é obrigatório." };
+
+  const parsed = resetPasswordSchema.safeParse({ password });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Senha inválida.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/athletes/${athleteId}/reset-password`, {
+      method: "POST",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[resetAthletePasswordAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) return { ok: true };
+
+  const message = await readErrorMessage(res);
+  console.error("[resetAthletePasswordAction] not ok", {
+    status: res.status,
+  });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Atleta não encontrado." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Senha inválida." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao redefinir (HTTP ${res.status}).`,
   };
 }

@@ -228,3 +228,12 @@ export const updateTeamHistorySchema = z.object({
 });
 
 export type UpdateTeamHistoryInput = z.infer<typeof updateTeamHistorySchema>;
+
+export const resetPasswordSchema = z.object({
+  password: z
+    .string()
+    .min(8, "Senha deve ter ao menos 8 caracteres")
+    .max(128, "Senha deve ter no máximo 128 caracteres"),
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

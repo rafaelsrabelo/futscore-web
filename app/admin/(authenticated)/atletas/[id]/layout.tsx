@@ -7,6 +7,7 @@ import { getAdminAthleteDetail } from "@/lib/admin/athletes";
 import type { AdminAthleteDetail } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 import { EditAthleteDialog } from "./edit-athlete-dialog";
+import { ResetPasswordButton } from "./reset-password-button";
 import { AthleteTabs } from "./tabs";
 
 const POSITION_LABELS: Record<string, string> = {
@@ -157,8 +158,12 @@ function AthleteHeader({
         </div>
       </div>
 
-      <div className="shrink-0 self-start sm:self-center">
+      <div className="shrink-0 self-start sm:self-center flex flex-wrap gap-2">
         <EditAthleteDialog athleteId={athleteId} initial={detail} />
+        <ResetPasswordButton
+          athleteId={athleteId}
+          athleteName={user.name}
+        />
       </div>
     </div>
   );
