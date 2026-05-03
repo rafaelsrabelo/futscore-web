@@ -114,6 +114,55 @@ const MatchStatusSchema = z.enum([
 const MatchResultSchema = z.enum(["WIN", "LOSS", "DRAW", "NOT_FINISHED"]);
 const PlayerPositionSchema = z.enum(["STARTER", "SUBSTITUTE"]);
 
+export const createMatchSchema = z.object({
+  athleteProfileId: z.uuid(),
+  myTeamId: z.uuid(),
+  adversaryTeam: z.string().min(1),
+  date: z.string().min(1),
+  modality: z.enum(["FUT_11", "FUT_7", "FUTSAL"]).optional(),
+  category: z
+    .enum([
+      "U5",
+      "U6",
+      "U7",
+      "U8",
+      "U9",
+      "U10",
+      "U11",
+      "U12",
+      "U13",
+      "U14",
+      "U15",
+      "U16",
+      "U17",
+      "U18",
+      "U19",
+      "U20",
+      "AMATEUR",
+      "PROFESSIONAL",
+    ])
+    .optional(),
+  location: z.string().optional(),
+  streamUrl: z.url("URL inválida").optional(),
+  competitionId: z.uuid().optional(),
+  status: z
+    .enum(["SCHEDULED", "LIVE", "FINISHED", "CANCELLED"])
+    .optional(),
+  result: z.enum(["WIN", "LOSS", "DRAW", "NOT_FINISHED"]).optional(),
+  myTeamScore: z.number().int().min(0).optional(),
+  adversaryScore: z.number().int().min(0).optional(),
+  playerPosition: z.enum(["STARTER", "SUBSTITUTE"]).optional(),
+  observations: z.string().optional(),
+  matchDuration: z.number().int().min(0).max(240).optional(),
+  approximateTime: z.number().int().min(0).max(240).optional(),
+  photoUrl: z.url("URL inválida").optional(),
+  videoUrl: z.url("URL inválida").optional(),
+  youtubeUrl: z.url("URL inválida").optional(),
+  performanceRating: z.number().int().min(1).max(5).optional(),
+});
+
+export type CreateMatchInput = z.infer<typeof createMatchSchema>;
+
 export const updateMatchSchema = z.object({
   athleteProfileId: z.uuid().optional(),
   myTeamId: z.uuid().optional(),

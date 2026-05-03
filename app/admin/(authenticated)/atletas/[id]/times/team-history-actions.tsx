@@ -4,6 +4,10 @@ import { Loader2, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
+  TeamPicker,
+  type TeamPickerOption,
+} from "@/components/admin/team-picker";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -41,11 +45,8 @@ import type {
 } from "@/lib/admin/schemas";
 import type { AdminTeamHistoryItem } from "@/lib/admin/types";
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 interface FormState {
-  teamId: string;
+  team: TeamPickerOption | null;
   startDate: string; // datetime-local
   endDate: string; // datetime-local
   current: boolean; // when true, endDate is null
@@ -69,12 +70,18 @@ function localInputToIso(local: string): string | null {
 }
 
 function emptyState(): FormState {
-  return { teamId: "", startDate: "", endDate: "", current: true };
+  return { team: null, startDate: "", endDate: "", current: true };
 }
 
 function fromEntry(entry: AdminTeamHistoryItem): FormState {
   return {
-    teamId: entry.team.id,
+    team: {
+      id: entry.team.id,
+      name: entry.team.name,
+      acronym: entry.team.acronym,
+      shieldPhoto: entry.team.shieldPhoto,
+      isPrincipal: false,
+    },
     startDate: isoToLocalInput(entry.startDate),
     endDate: isoToLocalInput(entry.endDate),
     current: entry.endDate === null,
@@ -84,8 +91,8 @@ function fromEntry(entry: AdminTeamHistoryItem): FormState {
 function validate(state: FormState):
   | { ok: true; startDateIso: string; endDateIso: string | null }
   | { ok: false; error: string } {
-  if (!state.teamId.trim() || !UUID_RE.test(state.teamId.trim())) {
-    return { ok: false, error: "Informe um teamId no formato UUID válido." };
+  if (!state.team) {
+    return { ok: false, error: "Selecione um time." };
   }
   const startIso = localInputToIso(state.startDate);
   if (!startIso) {
@@ -131,7 +138,7 @@ export function AddTeamHistoryButton({ athleteId }: { athleteId: string }) {
       return;
     }
     const payload: CreateTeamHistoryInput = {
-      teamId: state.teamId.trim(),
+      teamId: state.team!.id,
       startDate: v.startDateIso,
       endDate: v.endDateIso,
     };
@@ -172,6 +179,7 @@ export function AddTeamHistoryButton({ athleteId }: { athleteId: string }) {
 
         <form onSubmit={handleSubmit} className="space-y-3 pt-2">
           <TeamHistoryFields
+            athleteId={athleteId}
             state={state}
             onChange={(next) => setState((prev) => ({ ...prev, ...next }))}
           />
@@ -287,7 +295,7 @@ function EditTeamHistoryDialog({
       return;
     }
     const payload: UpdateTeamHistoryInput = {
-      teamId: state.teamId.trim(),
+      teamId: state.team!.id,
       startDate: v.startDateIso,
       endDate: v.endDateIso,
     };
@@ -321,6 +329,7 @@ function EditTeamHistoryDialog({
 
         <form onSubmit={handleSubmit} className="space-y-3 pt-2">
           <TeamHistoryFields
+            athleteId={athleteId}
             state={state}
             onChange={(next) => setState((prev) => ({ ...prev, ...next }))}
           />
@@ -414,32 +423,26 @@ function DeleteTeamHistoryAlert({
 }
 
 function TeamHistoryFields({
+  athleteId,
   state,
   onChange,
 }: {
+  athleteId: string;
   state: FormState;
   onChange: (next: Partial<FormState>) => void;
 }) {
   return (
     <>
       <div className="space-y-1.5">
-        <Label
-          htmlFor="th-team"
-          className="text-xs text-muted-foreground font-medium"
-        >
-          Team ID (UUID)
+        <Label className="text-xs text-muted-foreground font-medium">
+          Time
         </Label>
-        <Input
-          id="th-team"
-          value={state.teamId}
-          onChange={(e) => onChange({ teamId: e.target.value })}
-          placeholder="00000000-0000-0000-0000-000000000000"
-          spellCheck={false}
-          autoCapitalize="off"
+        <TeamPicker
+          athleteId={athleteId}
+          selected={state.team}
+          onChange={(team) => onChange({ team })}
+          placeholder="Buscar time"
         />
-        <p className="text-[11px] text-muted-foreground">
-          Ainda não temos picker de times — cole o UUID do `Team`.
-        </p>
       </div>
       <div className="space-y-1.5">
         <Label

@@ -12,6 +12,7 @@ import {
 } from "./constants";
 import {
   createAchievementSchema,
+  createMatchSchema,
   createTeamHistorySchema,
   loginSchema,
   updateAchievementSchema,
@@ -21,6 +22,7 @@ import {
   updatePlaySchema,
   updateTeamHistorySchema,
   type CreateAchievementInput,
+  type CreateMatchInput,
   type CreateTeamHistoryInput,
   type UpdateAchievementInput,
   type UpdateAthleteInput,
@@ -541,6 +543,60 @@ export async function createStandalonePlayAction(
 // ---------- Match write actions ----------
 
 type SimpleResult = { ok: true } | { ok: false; error: string };
+
+export type CreateMatchResult =
+  | { ok: true; id: string }
+  | { ok: false; error: string };
+
+export async function createMatchAction(
+  input: CreateMatchInput
+): Promise<CreateMatchResult> {
+  const parsed = createMatchSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/matches`, {
+      method: "POST",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[createMatchAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath("/admin/partidas");
+    revalidatePath(
+      `/admin/atletas/${parsed.data.athleteProfileId}/partidas`
+    );
+    revalidatePath(
+      `/admin/atletas/${parsed.data.athleteProfileId}`,
+      "layout"
+    );
+    const data = (await res.json().catch(() => null)) as { id: string } | null;
+    return { ok: true, id: data?.id ?? "" };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[createMatchAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Atleta ou time não encontrado." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao criar partida (HTTP ${res.status}).`,
+  };
+}
 
 async function readErrorMessage(res: Response): Promise<string | undefined> {
   const txt = await res.text().catch(() => "");

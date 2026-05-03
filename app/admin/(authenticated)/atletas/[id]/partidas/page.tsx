@@ -6,6 +6,7 @@ import type { AdminMatchListItem } from "@/lib/admin/types";
 import { EmptyState } from "@/components/admin/page-header";
 import { cn } from "@/lib/utils";
 import { Pagination } from "../../pagination";
+import { CreateMatchDialog } from "./create-match-dialog";
 
 const PAGE_SIZE = 20;
 
@@ -65,31 +66,35 @@ export default async function AtletaPartidasPage({
 
   const { data } = result;
 
-  if (data.items.length === 0) {
-    return (
-      <EmptyState
-        icon={<Trophy className="w-6 h-6" />}
-        title="Nenhuma partida registrada"
-        description="Quando o atleta tiver partidas cadastradas, elas aparecem aqui."
-      />
-    );
-  }
-
   return (
     <>
-      <div className="space-y-2">
-        {data.items.map((match) => (
-          <MatchRow key={match.id} match={match} />
-        ))}
+      <div className="flex items-center justify-end mb-4">
+        <CreateMatchDialog athleteId={id} />
       </div>
-      <Pagination
-        page={data.page}
-        pageSize={data.pageSize}
-        total={data.total}
-        hasMore={data.hasMore}
-        baseSearch={new URLSearchParams()}
-        pathname={`/admin/atletas/${id}/partidas`}
-      />
+
+      {data.items.length === 0 ? (
+        <EmptyState
+          icon={<Trophy className="w-6 h-6" />}
+          title="Nenhuma partida registrada"
+          description="Quando o atleta tiver partidas cadastradas, elas aparecem aqui."
+        />
+      ) : (
+        <>
+          <div className="space-y-2">
+            {data.items.map((match) => (
+              <MatchRow key={match.id} match={match} />
+            ))}
+          </div>
+          <Pagination
+            page={data.page}
+            pageSize={data.pageSize}
+            total={data.total}
+            hasMore={data.hasMore}
+            baseSearch={new URLSearchParams()}
+            pathname={`/admin/atletas/${id}/partidas`}
+          />
+        </>
+      )}
     </>
   );
 }
