@@ -13,7 +13,9 @@ import {
 import {
   loginSchema,
   updateAthleteSchema,
+  updatePlaySchema,
   type UpdateAthleteInput,
+  type UpdatePlayInput,
 } from "./schemas";
 import type { TokenPair } from "./types";
 
@@ -402,5 +404,124 @@ export async function updateAthleteAction(
   if (res.status === 400) {
     return { ok: false, error: message ?? "Dados inválidos." };
   }
-  return { ok: false, error: `Falha ao salvar (HTTP ${res.status}).` };
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export type UpdatePlayResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function updatePlayAction(
+  playId: string,
+  input: UpdatePlayInput
+): Promise<UpdatePlayResult> {
+  if (!playId) {
+    return { ok: false, error: "ID do lance é obrigatório." };
+  }
+
+  const parsed = updatePlaySchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/plays/${playId}`, {
+      method: "PATCH",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[updatePlayAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) return { ok: true };
+
+  const txt = await res.text().catch(() => "");
+  let parsedBody: { message?: string } | null = null;
+  try {
+    parsedBody = txt ? (JSON.parse(txt) as { message?: string }) : null;
+  } catch {
+    parsedBody = null;
+  }
+  const message = parsedBody?.message;
+
+  console.error("[updatePlayAction] not ok", {
+    status: res.status,
+    body: txt.slice(0, 300),
+  });
+
+  if (res.status === 404) return { ok: false, error: "Lance não encontrado." };
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export interface CreateStandalonePlayInput {
+  athleteId: string;
+  playType: string;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  photoUrl?: string;
+  rating?: number;
+  observations?: string;
+  classifications?: string[];
+}
+
+export async function createStandalonePlayAction(
+  input: CreateStandalonePlayInput
+): Promise<CreatePlayResult> {
+  if (!input.athleteId || !input.playType) {
+    return { ok: false, error: "Atleta e tipo de lance são obrigatórios." };
+  }
+
+  const body: Record<string, unknown> = { playType: input.playType };
+  if (input.videoUrl) body.videoUrl = input.videoUrl;
+  if (input.thumbnailUrl) body.thumbnailUrl = input.thumbnailUrl;
+  if (input.photoUrl) body.photoUrl = input.photoUrl;
+  if (input.rating) body.rating = input.rating;
+  if (input.observations) body.observations = input.observations;
+  if (input.classifications?.length)
+    body.classifications = input.classifications;
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/athletes/${input.athleteId}/plays`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[createStandalonePlayAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    console.error("[createStandalonePlayAction] not ok", {
+      status: res.status,
+      body: txt.slice(0, 300),
+    });
+    if (res.status === 404) {
+      return { ok: false, error: "Atleta não encontrado." };
+    }
+    if (res.status === 400) {
+      return { ok: false, error: "Dados do lance inválidos." };
+    }
+    return { ok: false, error: `Falha ao salvar (HTTP ${res.status}).` };
+  }
+
+  const data = (await res.json().catch(() => null)) as { id: string } | null;
+  return { ok: true, playId: data?.id ?? "" };
 }

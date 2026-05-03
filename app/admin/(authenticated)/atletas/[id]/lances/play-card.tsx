@@ -180,11 +180,7 @@ export function PlayCard({ play }: { play: AdminPlayItem }) {
             {play.rating}
           </div>
         )}
-        <PlayActionsMenu
-          playId={play.id}
-          hasVideo={hasVideo}
-          playLabel={playLabelForMenu}
-        />
+        <PlayActionsMenu play={play} playLabel={playLabelForMenu} />
       </div>
 
       {canPlay && (

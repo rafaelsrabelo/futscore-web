@@ -84,7 +84,7 @@ export default async function AtletaLancesPage({
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <LancesFilters current={sp} pathname={`/admin/atletas/${id}/lances`} />
-        <AddPlayDialog matches={matches} />
+        <AddPlayDialog athleteId={id} matches={matches} />
       </div>
 
       {data.items.length === 0 ? (

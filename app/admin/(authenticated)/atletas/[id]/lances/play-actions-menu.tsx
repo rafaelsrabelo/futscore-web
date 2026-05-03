@@ -1,6 +1,13 @@
 "use client";
 
-import { Loader2, MoreVertical, RefreshCw, Trash2, VideoOff } from "lucide-react";
+import {
+  Loader2,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  VideoOff,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -21,23 +28,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { deletePlayAction, removePlayVideoAction } from "@/lib/admin/actions";
+import type { AdminPlayItem } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 import { AttachVideoDialog } from "./attach-video-dialog";
+import { EditPlayDialog } from "./edit-play-dialog";
 
 type Confirm = "remove-video" | "delete-play" | null;
 
 export function PlayActionsMenu({
-  playId,
-  hasVideo,
+  play,
   playLabel,
 }: {
-  playId: string;
-  hasVideo: boolean;
+  play: AdminPlayItem;
   playLabel?: string;
 }) {
+  const playId = play.id;
+  const hasVideo = Boolean(play.videoUrl);
   const router = useRouter();
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [replaceOpen, setReplaceOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,10 +100,18 @@ export function PlayActionsMenu({
           align="end"
           onClick={stop}
           onPointerDown={stop}
-          className="w-44"
+          className="w-48"
         >
+          <DropdownMenuItem
+            onSelect={() => setEditOpen(true)}
+            className="gap-2"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar metadados
+          </DropdownMenuItem>
           {hasVideo && (
             <>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onSelect={() => setReplaceOpen(true)}
                 className="gap-2"
@@ -111,9 +129,9 @@ export function PlayActionsMenu({
                 <VideoOff className="h-4 w-4" />
                 Remover vídeo
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
             </>
           )}
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
             onSelect={() => {
@@ -127,6 +145,8 @@ export function PlayActionsMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <EditPlayDialog play={play} open={editOpen} onOpenChange={setEditOpen} />
 
       {hasVideo && (
         <AttachVideoDialog

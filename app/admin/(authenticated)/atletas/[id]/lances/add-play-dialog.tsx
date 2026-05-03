@@ -19,7 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createPlayAction } from "@/lib/admin/actions";
+import {
+  createPlayAction,
+  createStandalonePlayAction,
+} from "@/lib/admin/actions";
 import { cn } from "@/lib/utils";
 import {
   UploadProgress,
@@ -34,7 +37,7 @@ export interface MatchOption {
   adversaryTeam: string;
 }
 
-const PLAY_TYPES: { value: string; label: string }[] = [
+export const PLAY_TYPES: { value: string; label: string }[] = [
   { value: "GOAL", label: "Gol" },
   { value: "ASSIST", label: "Assistência" },
   { value: "SHOT_ON_TARGET", label: "Finalização no alvo" },
@@ -66,7 +69,7 @@ const PLAY_TYPES: { value: string; label: string }[] = [
   { value: "BEST_MOMENTS", label: "Melhores momentos" },
 ];
 
-const CLASSIFICATIONS: { value: string; label: string }[] = [
+export const CLASSIFICATIONS: { value: string; label: string }[] = [
   { value: "PHYSICAL", label: "Físico" },
   { value: "TACTICAL", label: "Tático" },
   { value: "TECHNICAL", label: "Técnico" },
@@ -86,7 +89,15 @@ function formatMatchLabel(iso: string, adversary: string): string {
   }
 }
 
-export function AddPlayDialog({ matches }: { matches: MatchOption[] }) {
+const STANDALONE_VALUE = "__standalone__";
+
+export function AddPlayDialog({
+  athleteId,
+  matches,
+}: {
+  athleteId: string;
+  matches: MatchOption[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -147,14 +158,28 @@ export function AddPlayDialog({ matches }: { matches: MatchOption[] }) {
       }
 
       setStage("saving");
-      const result = await createPlayAction({
-        matchId,
-        playType,
-        rating: rating || undefined,
-        observations: observations.trim() || undefined,
-        classifications: classifications.length ? classifications : undefined,
-        videoUrl,
-      });
+      const isStandalone = matchId === STANDALONE_VALUE;
+      const result = isStandalone
+        ? await createStandalonePlayAction({
+            athleteId,
+            playType,
+            rating: rating || undefined,
+            observations: observations.trim() || undefined,
+            classifications: classifications.length
+              ? classifications
+              : undefined,
+            videoUrl,
+          })
+        : await createPlayAction({
+            matchId,
+            playType,
+            rating: rating || undefined,
+            observations: observations.trim() || undefined,
+            classifications: classifications.length
+              ? classifications
+              : undefined,
+            videoUrl,
+          });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -171,8 +196,6 @@ export function AddPlayDialog({ matches }: { matches: MatchOption[] }) {
     }
   }
 
-  const noMatches = matches.length === 0;
-
   return (
     <>
       <Button
@@ -180,8 +203,6 @@ export function AddPlayDialog({ matches }: { matches: MatchOption[] }) {
         onClick={() => setOpen(true)}
         size="sm"
         className="gap-1.5"
-        disabled={noMatches}
-        title={noMatches ? "Atleta não tem partidas cadastradas" : undefined}
       >
         <Plus className="w-4 h-4" />
         Adicionar lance
@@ -203,9 +224,12 @@ export function AddPlayDialog({ matches }: { matches: MatchOption[] }) {
             <Field label="Partida">
               <Select value={matchId} onValueChange={setMatchId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a partida" />
+                  <SelectValue placeholder="Selecione a partida ou avulso" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={STANDALONE_VALUE}>
+                    Sem partida (lance avulso)
+                  </SelectItem>
                   {matches.map((m) => (
                     <SelectItem key={m.id} value={m.id}>
                       {formatMatchLabel(m.date, m.adversaryTeam)}

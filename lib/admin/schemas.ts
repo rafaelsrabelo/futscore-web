@@ -65,3 +65,21 @@ export const updateAthleteSchema = z.object({
 });
 
 export type UpdateAthleteInput = z.infer<typeof updateAthleteSchema>;
+
+const ClassificationSchema = z.enum([
+  "PHYSICAL",
+  "TACTICAL",
+  "TECHNICAL",
+  "MENTAL",
+]);
+
+export const updatePlaySchema = z.object({
+  playType: z.string().min(1).optional(),
+  rating: z.number().int().min(1).max(5).nullable().optional(),
+  observations: z.string().nullable().optional(),
+  photoUrl: z.url("URL inválida").nullable().optional(),
+  thumbnailUrl: z.url("URL inválida").nullable().optional(),
+  classifications: z.array(ClassificationSchema).optional(),
+});
+
+export type UpdatePlayInput = z.infer<typeof updatePlaySchema>;
