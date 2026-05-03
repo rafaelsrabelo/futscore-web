@@ -4,11 +4,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getAdminAthleteDetail } from "@/lib/admin/athletes";
-import type {
-  AdminAthleteDetailProfile,
-  AdminAthleteDetailUser,
-} from "@/lib/admin/types";
+import type { AdminAthleteDetail } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
+import { EditAthleteDialog } from "./edit-athlete-dialog";
 import { AthleteTabs } from "./tabs";
 
 const POSITION_LABELS: Record<string, string> = {
@@ -59,12 +57,12 @@ export default async function AthleteDetailLayout({
     );
   }
 
-  const { profile, user, counts } = result.data;
+  const { counts } = result.data;
 
   return (
     <>
       <BackLink />
-      <AthleteHeader profile={profile} user={user} />
+      <AthleteHeader athleteId={id} detail={result.data} />
       <AthleteTabs
         tabs={[
           { href: `/admin/atletas/${id}`, label: "Visão geral" },
@@ -108,12 +106,13 @@ function BackLink() {
 }
 
 function AthleteHeader({
-  profile,
-  user,
+  athleteId,
+  detail,
 }: {
-  profile: AdminAthleteDetailProfile;
-  user: AdminAthleteDetailUser;
+  athleteId: string;
+  detail: AdminAthleteDetail;
 }) {
+  const { profile, user } = detail;
   const age = profile.age ?? ageFromBirth(profile.birthDate);
   const displayName = profile.nickname || user.name;
 
@@ -156,6 +155,10 @@ function AthleteHeader({
           {profile.currentClub && <Pill muted>{profile.currentClub}</Pill>}
           {age != null && <Pill muted>{age} anos</Pill>}
         </div>
+      </div>
+
+      <div className="shrink-0 self-start sm:self-center">
+        <EditAthleteDialog athleteId={athleteId} initial={detail} />
       </div>
     </div>
   );

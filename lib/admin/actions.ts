@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchAuthed } from "./api";
@@ -9,7 +10,11 @@ import {
   ADMIN_REFRESH_COOKIE,
   REFRESH_COOKIE_MAX_AGE,
 } from "./constants";
-import { loginSchema } from "./schemas";
+import {
+  loginSchema,
+  updateAthleteSchema,
+  type UpdateAthleteInput,
+} from "./schemas";
 import type { TokenPair } from "./types";
 
 const API_URL =
@@ -316,4 +321,86 @@ export async function deletePlayAction(input: {
   }
 
   return { ok: true };
+}
+
+export type UpdateAthleteResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: string;
+      field?: "nickname" | "email" | "cpf";
+    };
+
+export async function updateAthleteAction(
+  athleteId: string,
+  input: UpdateAthleteInput
+): Promise<UpdateAthleteResult> {
+  if (!athleteId) {
+    return { ok: false, error: "ID do atleta é obrigatório." };
+  }
+
+  const parsed = updateAthleteSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/athletes/${athleteId}`, {
+      method: "PATCH",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[updateAthleteAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath(`/admin/atletas/${athleteId}`, "layout");
+    return { ok: true };
+  }
+
+  const txt = await res.text().catch(() => "");
+  let parsedBody: { message?: string } | null = null;
+  try {
+    parsedBody = txt ? (JSON.parse(txt) as { message?: string }) : null;
+  } catch {
+    parsedBody = null;
+  }
+  const message = parsedBody?.message;
+
+  console.error("[updateAthleteAction] not ok", {
+    status: res.status,
+    body: txt.slice(0, 300),
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    return { ok: false, error: "Sessão expirada. Faça login de novo." };
+  }
+  if (res.status === 404) {
+    return { ok: false, error: "Atleta não encontrado." };
+  }
+  if (res.status === 409) {
+    const lower = (message ?? "").toLowerCase();
+    const field = lower.includes("nickname")
+      ? "nickname"
+      : lower.includes("email") || lower.includes("e-mail")
+        ? "email"
+        : lower.includes("cpf")
+          ? "cpf"
+          : undefined;
+    return {
+      ok: false,
+      error: message ?? "Valor já está em uso por outro usuário.",
+      field,
+    };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return { ok: false, error: `Falha ao salvar (HTTP ${res.status}).` };
 }
