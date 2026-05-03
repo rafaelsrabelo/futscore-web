@@ -83,3 +83,99 @@ export const updatePlaySchema = z.object({
 });
 
 export type UpdatePlayInput = z.infer<typeof updatePlaySchema>;
+
+const ModalitySchema = z.enum(["FUT_11", "FUT_7", "FUTSAL"]);
+const CategorySchema = z.enum([
+  "U5",
+  "U6",
+  "U7",
+  "U8",
+  "U9",
+  "U10",
+  "U11",
+  "U12",
+  "U13",
+  "U14",
+  "U15",
+  "U16",
+  "U17",
+  "U18",
+  "U19",
+  "U20",
+  "AMATEUR",
+  "PROFESSIONAL",
+]);
+const MatchStatusSchema = z.enum([
+  "SCHEDULED",
+  "LIVE",
+  "FINISHED",
+  "CANCELLED",
+]);
+const MatchResultSchema = z.enum(["WIN", "LOSS", "DRAW", "NOT_FINISHED"]);
+const PlayerPositionSchema = z.enum(["STARTER", "SUBSTITUTE"]);
+
+export const updateMatchSchema = z.object({
+  athleteProfileId: z.uuid().optional(),
+  myTeamId: z.uuid().optional(),
+  competitionId: z.uuid().nullable().optional(),
+  adversaryTeam: z.string().min(1).optional(),
+  date: z.string().min(1).optional(),
+  modality: ModalitySchema.optional(),
+  category: CategorySchema.optional(),
+  location: z.string().optional(),
+  streamUrl: z.url("URL inválida").nullable().optional(),
+  status: MatchStatusSchema.optional(),
+  result: MatchResultSchema.optional(),
+  myTeamScore: z.number().int().min(0).nullable().optional(),
+  adversaryScore: z.number().int().min(0).nullable().optional(),
+  playerPosition: PlayerPositionSchema.nullable().optional(),
+  observations: z.string().nullable().optional(),
+  matchDuration: z.number().int().min(0).max(240).nullable().optional(),
+  approximateTime: z.number().int().min(0).max(240).nullable().optional(),
+  photoUrl: z.url("URL inválida").nullable().optional(),
+  videoUrl: z.url("URL inválida").nullable().optional(),
+  youtubeUrl: z.url("URL inválida").nullable().optional(),
+  performanceRating: z.number().int().min(1).max(5).nullable().optional(),
+});
+
+export type UpdateMatchInput = z.infer<typeof updateMatchSchema>;
+
+export const updateMatchResultSchema = z.object({
+  myTeamScore: z.number().int().min(0).optional(),
+  adversaryScore: z.number().int().min(0).optional(),
+  status: MatchStatusSchema.optional(),
+  result: MatchResultSchema.optional(),
+});
+
+export type UpdateMatchResultInput = z.infer<typeof updateMatchResultSchema>;
+
+const AchievementTypeSchema = z.enum(["COLLECTIVE", "INDIVIDUAL"]);
+
+export const createAchievementSchema = z.object({
+  name: z.string().min(1).max(120),
+  category: z.string().min(1).max(60),
+  year: z.number().int().min(1900),
+  type: AchievementTypeSchema,
+});
+
+export type CreateAchievementInput = z.infer<typeof createAchievementSchema>;
+
+export const updateAchievementSchema = createAchievementSchema.partial();
+
+export type UpdateAchievementInput = z.infer<typeof updateAchievementSchema>;
+
+export const createTeamHistorySchema = z.object({
+  teamId: z.uuid(),
+  startDate: z.string().min(1),
+  endDate: z.string().min(1).nullable().optional(),
+});
+
+export type CreateTeamHistoryInput = z.infer<typeof createTeamHistorySchema>;
+
+export const updateTeamHistorySchema = z.object({
+  teamId: z.uuid().optional(),
+  startDate: z.string().min(1).optional(),
+  endDate: z.string().min(1).nullable().optional(),
+});
+
+export type UpdateTeamHistoryInput = z.infer<typeof updateTeamHistorySchema>;

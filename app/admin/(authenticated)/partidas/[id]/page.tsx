@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin/matches";
 import type { AdminMatchDetail } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
+import { MatchActions } from "./match-actions";
 
 const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: "Agendada",
@@ -103,6 +104,10 @@ export default async function PartidaDetailPage({
       ) : (
         <>
           <MatchHeader match={detail.data} />
+
+          <div className="mt-4">
+            <MatchActions match={detail.data} />
+          </div>
 
           <section className="mt-6">
             <div className="flex items-center justify-between mb-4">

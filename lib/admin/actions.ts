@@ -11,11 +11,23 @@ import {
   REFRESH_COOKIE_MAX_AGE,
 } from "./constants";
 import {
+  createAchievementSchema,
+  createTeamHistorySchema,
   loginSchema,
+  updateAchievementSchema,
   updateAthleteSchema,
+  updateMatchResultSchema,
+  updateMatchSchema,
   updatePlaySchema,
+  updateTeamHistorySchema,
+  type CreateAchievementInput,
+  type CreateTeamHistoryInput,
+  type UpdateAchievementInput,
   type UpdateAthleteInput,
+  type UpdateMatchInput,
+  type UpdateMatchResultInput,
   type UpdatePlayInput,
+  type UpdateTeamHistoryInput,
 } from "./schemas";
 import type { TokenPair } from "./types";
 
@@ -524,4 +536,456 @@ export async function createStandalonePlayAction(
 
   const data = (await res.json().catch(() => null)) as { id: string } | null;
   return { ok: true, playId: data?.id ?? "" };
+}
+
+// ---------- Match write actions ----------
+
+type SimpleResult = { ok: true } | { ok: false; error: string };
+
+async function readErrorMessage(res: Response): Promise<string | undefined> {
+  const txt = await res.text().catch(() => "");
+  try {
+    return txt
+      ? ((JSON.parse(txt) as { message?: string }).message ?? undefined)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function updateMatchAction(
+  matchId: string,
+  input: UpdateMatchInput
+): Promise<SimpleResult> {
+  if (!matchId) return { ok: false, error: "ID da partida é obrigatório." };
+
+  const parsed = updateMatchSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/matches/${matchId}`, {
+      method: "PATCH",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[updateMatchAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath(`/admin/partidas/${matchId}`);
+    revalidatePath("/admin/partidas");
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[updateMatchAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Partida não encontrada." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export async function updateMatchResultAction(
+  matchId: string,
+  input: UpdateMatchResultInput
+): Promise<SimpleResult> {
+  if (!matchId) return { ok: false, error: "ID da partida é obrigatório." };
+
+  const parsed = updateMatchResultSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/matches/${matchId}/result`, {
+      method: "PATCH",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[updateMatchResultAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath(`/admin/partidas/${matchId}`);
+    revalidatePath("/admin/partidas");
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[updateMatchResultAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Partida não encontrada." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export async function linkMatchAthleteAction(
+  matchId: string,
+  athleteProfileId: string
+): Promise<SimpleResult> {
+  if (!matchId || !athleteProfileId) {
+    return {
+      ok: false,
+      error: "ID da partida e do atleta são obrigatórios.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/matches/${matchId}/link-athlete`, {
+      method: "POST",
+      body: JSON.stringify({ athleteProfileId }),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[linkMatchAthleteAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath(`/admin/partidas/${matchId}`);
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[linkMatchAthleteAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Partida ou atleta não encontrado." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao reatribuir (HTTP ${res.status}).`,
+  };
+}
+
+export async function deleteMatchAction(
+  matchId: string
+): Promise<SimpleResult> {
+  if (!matchId) return { ok: false, error: "ID da partida é obrigatório." };
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/matches/${matchId}`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[deleteMatchAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath("/admin/partidas");
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[deleteMatchAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Partida não encontrada." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao excluir (HTTP ${res.status}).`,
+  };
+}
+
+// ---------- Achievements ----------
+
+export async function createAchievementAction(
+  athleteId: string,
+  input: CreateAchievementInput
+): Promise<SimpleResult & { id?: string }> {
+  if (!athleteId) return { ok: false, error: "ID do atleta é obrigatório." };
+
+  const parsed = createAchievementSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/athletes/${athleteId}/achievements`, {
+      method: "POST",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[createAchievementAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath(`/admin/atletas/${athleteId}/conquistas`);
+    revalidatePath(`/admin/atletas/${athleteId}`, "layout");
+    const data = (await res.json().catch(() => null)) as { id: string } | null;
+    return { ok: true, id: data?.id };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[createAchievementAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Atleta não encontrado." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export async function updateAchievementAction(
+  achievementId: string,
+  athleteId: string,
+  input: UpdateAchievementInput
+): Promise<SimpleResult> {
+  if (!achievementId) {
+    return { ok: false, error: "ID da conquista é obrigatório." };
+  }
+
+  const parsed = updateAchievementSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/achievements/${achievementId}`, {
+      method: "PATCH",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[updateAchievementAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    if (athleteId) {
+      revalidatePath(`/admin/atletas/${athleteId}/conquistas`);
+    }
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[updateAchievementAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Conquista não encontrada." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export async function deleteAchievementAction(
+  achievementId: string,
+  athleteId: string
+): Promise<SimpleResult> {
+  if (!achievementId) {
+    return { ok: false, error: "ID da conquista é obrigatório." };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/achievements/${achievementId}`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[deleteAchievementAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    if (athleteId) {
+      revalidatePath(`/admin/atletas/${athleteId}/conquistas`);
+      revalidatePath(`/admin/atletas/${athleteId}`, "layout");
+    }
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[deleteAchievementAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Conquista não encontrada." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao excluir (HTTP ${res.status}).`,
+  };
+}
+
+// ---------- Team history ----------
+
+export async function createTeamHistoryAction(
+  athleteId: string,
+  input: CreateTeamHistoryInput
+): Promise<SimpleResult & { id?: string }> {
+  if (!athleteId) return { ok: false, error: "ID do atleta é obrigatório." };
+
+  const parsed = createTeamHistorySchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/athletes/${athleteId}/team-history`, {
+      method: "POST",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[createTeamHistoryAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath(`/admin/atletas/${athleteId}/times`);
+    revalidatePath(`/admin/atletas/${athleteId}`, "layout");
+    const data = (await res.json().catch(() => null)) as { id: string } | null;
+    return { ok: true, id: data?.id };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[createTeamHistoryAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Atleta ou time não encontrado." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export async function updateTeamHistoryAction(
+  entryId: string,
+  athleteId: string,
+  input: UpdateTeamHistoryInput
+): Promise<SimpleResult> {
+  if (!entryId) {
+    return { ok: false, error: "ID da entrada é obrigatório." };
+  }
+
+  const parsed = updateTeamHistorySchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/team-history/${entryId}`, {
+      method: "PATCH",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[updateTeamHistoryAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    if (athleteId) {
+      revalidatePath(`/admin/atletas/${athleteId}/times`);
+    }
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[updateTeamHistoryAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return {
+      ok: false,
+      error: message ?? "Entrada ou time não encontrado.",
+    };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export async function deleteTeamHistoryAction(
+  entryId: string,
+  athleteId: string
+): Promise<SimpleResult> {
+  if (!entryId) {
+    return { ok: false, error: "ID da entrada é obrigatório." };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/team-history/${entryId}`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[deleteTeamHistoryAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    if (athleteId) {
+      revalidatePath(`/admin/atletas/${athleteId}/times`);
+      revalidatePath(`/admin/atletas/${athleteId}`, "layout");
+    }
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[deleteTeamHistoryAction] not ok", { status: res.status });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Entrada não encontrada." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao excluir (HTTP ${res.status}).`,
+  };
 }
