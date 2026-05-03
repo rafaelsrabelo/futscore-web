@@ -6,6 +6,10 @@ import { getAdminAthleteAchievements } from "@/lib/admin/athletes";
 import type { AdminAchievementItem } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
 import { Pagination } from "../../pagination";
+import {
+  AchievementRowActions,
+  AddAchievementButton,
+} from "./achievement-actions";
 
 const PAGE_SIZE = 30;
 
@@ -49,36 +53,50 @@ export default async function AtletaConquistasPage({
 
   const { data } = result;
 
-  if (data.items.length === 0) {
-    return (
-      <EmptyState
-        icon={<Trophy className="w-6 h-6" />}
-        title="Nenhuma conquista registrada"
-        description="Títulos coletivos e individuais do atleta aparecem aqui."
-      />
-    );
-  }
-
   return (
     <>
-      <div className="space-y-2">
-        {data.items.map((item) => (
-          <AchievementRow key={item.id} item={item} />
-        ))}
+      <div className="flex items-center justify-end mb-4">
+        <AddAchievementButton athleteId={id} />
       </div>
-      <Pagination
-        page={data.page}
-        pageSize={data.pageSize}
-        total={data.total}
-        hasMore={data.hasMore}
-        baseSearch={new URLSearchParams()}
-        pathname={`/admin/atletas/${id}/conquistas`}
-      />
+
+      {data.items.length === 0 ? (
+        <EmptyState
+          icon={<Trophy className="w-6 h-6" />}
+          title="Nenhuma conquista registrada"
+          description="Títulos coletivos e individuais do atleta aparecem aqui."
+        />
+      ) : (
+        <>
+          <div className="space-y-2">
+            {data.items.map((item) => (
+              <AchievementRow
+                key={item.id}
+                item={item}
+                athleteId={id}
+              />
+            ))}
+          </div>
+          <Pagination
+            page={data.page}
+            pageSize={data.pageSize}
+            total={data.total}
+            hasMore={data.hasMore}
+            baseSearch={new URLSearchParams()}
+            pathname={`/admin/atletas/${id}/conquistas`}
+          />
+        </>
+      )}
     </>
   );
 }
 
-function AchievementRow({ item }: { item: AdminAchievementItem }) {
+function AchievementRow({
+  item,
+  athleteId,
+}: {
+  item: AdminAchievementItem;
+  athleteId: string;
+}) {
   return (
     <div className="flex items-center gap-4 p-4 rounded-lg border border-border/60 bg-card/40">
       <div className="flex flex-col items-center justify-center w-16 shrink-0">
@@ -96,6 +114,7 @@ function AchievementRow({ item }: { item: AdminAchievementItem }) {
       </div>
 
       <TypeChip type={item.type} />
+      <AchievementRowActions achievement={item} athleteId={athleteId} />
     </div>
   );
 }

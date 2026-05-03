@@ -6,6 +6,10 @@ import { EmptyState } from "@/components/admin/page-header";
 import { getAdminAthleteTeamHistory } from "@/lib/admin/athletes";
 import type { AdminTeamHistoryItem } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
+import {
+  AddTeamHistoryButton,
+  TeamHistoryRowActions,
+} from "./team-history-actions";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "hoje";
@@ -41,34 +45,41 @@ export default async function AtletaTimesPage({
 
   const { items, currentTeam } = result.data;
 
-  if (items.length === 0) {
-    return (
-      <EmptyState
-        icon={<Users className="w-6 h-6" />}
-        title="Sem histórico de times"
-        description="Quando o atleta passar por clubes ou seleções, aparece aqui."
-      />
-    );
-  }
-
   return (
-    <div className="space-y-2">
-      {items.map((item) => (
-        <TeamRow
-          key={item.id}
-          item={item}
-          isCurrent={currentTeam?.id === item.id}
+    <>
+      <div className="flex items-center justify-end mb-4">
+        <AddTeamHistoryButton athleteId={id} />
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyState
+          icon={<Users className="w-6 h-6" />}
+          title="Sem histórico de times"
+          description="Quando o atleta passar por clubes ou seleções, aparece aqui."
         />
-      ))}
-    </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <TeamRow
+              key={item.id}
+              item={item}
+              athleteId={id}
+              isCurrent={currentTeam?.id === item.id}
+            />
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
 function TeamRow({
   item,
+  athleteId,
   isCurrent,
 }: {
   item: AdminTeamHistoryItem;
+  athleteId: string;
   isCurrent: boolean;
 }) {
   const { team } = item;
@@ -115,6 +126,8 @@ function TeamRow({
           {formatDate(item.startDate)} — {formatDate(item.endDate)}
         </div>
       </div>
+
+      <TeamHistoryRowActions entry={item} athleteId={athleteId} />
     </div>
   );
 }
