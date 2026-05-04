@@ -237,3 +237,22 @@ export const resetPasswordSchema = z.object({
 });
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+const AdminUserRoleSchema = z.enum(["ATHLETE", "OBSERVER"]);
+
+export const updateUserSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório").max(120).optional(),
+  email: z.email("E-mail inválido").optional(),
+  cpf: z
+    .string()
+    .min(11, "CPF deve ter 11 dígitos")
+    .max(14, "CPF muito longo")
+    .nullable()
+    .optional(),
+  role: AdminUserRoleSchema.nullable().optional(),
+  isActive: z.boolean().optional(),
+  emailVerified: z.boolean().optional(),
+  isImported: z.boolean().optional(),
+});
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;

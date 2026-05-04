@@ -389,3 +389,57 @@ export interface DashboardInactivityBuckets {
   buckets: DashboardInactivityBucket[];
   total: number;
 }
+
+// ---- Admin Users (BE-USERS) ----
+
+export type AdminUserRole = "ATHLETE" | "OBSERVER";
+export type AdminUserRoleFilter = AdminUserRole | "none";
+export type AdminActivePlan = "PREMIUM" | "FREE";
+
+export interface AdminUserListItem {
+  id: string;
+  name: string;
+  email: string;
+  cpf: string | null;
+  role: AdminUserRole | null;
+  isActive: boolean;
+  emailVerified: boolean;
+  isImported: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  hasAthleteProfile: boolean;
+  hasObserverProfile: boolean;
+  activePlan: AdminActivePlan;
+}
+
+export interface AdminUsersResponse {
+  items: AdminUserListItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AdminUserDetailUser {
+  id: string;
+  name: string;
+  email: string;
+  cpf: string | null;
+  role: AdminUserRole | null;
+  isActive: boolean;
+  emailVerified: boolean;
+  isImported: boolean;
+  provider: string;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminUserDetail {
+  user: AdminUserDetailUser;
+  athleteProfileId: string | null;
+  observerProfileId: string | null;
+  activePlan: AdminActivePlan;
+}

@@ -13,6 +13,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  UserCog,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -28,6 +29,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/atletas", label: "Atletas", icon: Users },
+  { href: "/admin/usuarios", label: "Usuários", icon: UserCog },
   { href: "/admin/partidas", label: "Partidas", icon: CalendarDays },
   { href: "/admin/olheiros", label: "Olheiros", icon: Eye },
   { href: "/admin/acessos", label: "Acessos", icon: KeyRound },

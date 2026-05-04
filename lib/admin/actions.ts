@@ -22,6 +22,7 @@ import {
   updateMatchSchema,
   updatePlaySchema,
   updateTeamHistorySchema,
+  updateUserSchema,
   type CreateAchievementInput,
   type CreateMatchInput,
   type CreateTeamHistoryInput,
@@ -31,6 +32,7 @@ import {
   type UpdateMatchResultInput,
   type UpdatePlayInput,
   type UpdateTeamHistoryInput,
+  type UpdateUserInput,
 } from "./schemas";
 import type { TokenPair } from "./types";
 
@@ -1048,6 +1050,123 @@ export async function deleteTeamHistoryAction(
 }
 
 // ---------- Reset password ----------
+
+// ---------- Admin Users (BE-USERS) ----------
+
+export type UpdateUserResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: string;
+      field?: "email" | "cpf";
+    };
+
+export async function updateUserAction(
+  userId: string,
+  input: UpdateUserInput
+): Promise<UpdateUserResult> {
+  if (!userId) return { ok: false, error: "ID do usuário é obrigatório." };
+
+  const parsed = updateUserSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/users/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[updateUserAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath(`/admin/usuarios/${userId}`);
+    revalidatePath("/admin/usuarios");
+    return { ok: true };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[updateUserAction] not ok", { status: res.status });
+
+  if (res.status === 401 || res.status === 403) {
+    return { ok: false, error: "Sessão expirada. Faça login de novo." };
+  }
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Usuário não encontrado." };
+  }
+  if (res.status === 409) {
+    const lower = (message ?? "").toLowerCase();
+    const field = lower.includes("cpf")
+      ? "cpf"
+      : lower.includes("email") || lower.includes("e-mail")
+        ? "email"
+        : undefined;
+    return {
+      ok: false,
+      error: message ?? "Valor já está em uso por outro usuário.",
+      field,
+    };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao salvar (HTTP ${res.status}).`,
+  };
+}
+
+export async function resetUserPasswordAction(
+  userId: string,
+  password: string
+): Promise<SimpleResult> {
+  if (!userId) return { ok: false, error: "ID do usuário é obrigatório." };
+
+  const parsed = resetPasswordSchema.safeParse({ password });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Senha inválida.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/users/${userId}/reset-password`, {
+      method: "POST",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[resetUserPasswordAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) return { ok: true };
+
+  const message = await readErrorMessage(res);
+  console.error("[resetUserPasswordAction] not ok", {
+    status: res.status,
+  });
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Usuário não encontrado." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Senha inválida." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao redefinir (HTTP ${res.status}).`,
+  };
+}
 
 export async function resetAthletePasswordAction(
   athleteId: string,

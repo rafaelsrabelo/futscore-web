@@ -1,0 +1,296 @@
+"use client";
+
+import {
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
+import { useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { resetUserPasswordAction } from "@/lib/admin/actions";
+
+const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const LOWER = "abcdefghijklmnopqrstuvwxyz";
+const DIGIT = "0123456789";
+const SYMBOL = "!@#$%&*";
+const ALL = UPPER + LOWER + DIGIT + SYMBOL;
+const PASSWORD_LENGTH = 16;
+
+function randomInt(maxExclusive: number): number {
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return arr[0] % maxExclusive;
+}
+
+function randomChar(pool: string): string {
+  return pool[randomInt(pool.length)];
+}
+
+/**
+ * Strict mode: garante ao menos 1 maiúscula + 1 minúscula + 1 dígito + 1
+ * símbolo, completa o restante com o pool inteiro e embaralha pra não fixar
+ * a posição das classes obrigatórias.
+ */
+function generatePassword(length = PASSWORD_LENGTH): string {
+  const chars: string[] = [
+    randomChar(UPPER),
+    randomChar(LOWER),
+    randomChar(DIGIT),
+    randomChar(SYMBOL),
+  ];
+  for (let i = chars.length; i < length; i++) chars.push(randomChar(ALL));
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
+}
+
+export function ResetUserPasswordButton({
+  userId,
+  userName,
+}: {
+  userId: string;
+  userName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [show, setShow] = useState(false);
+  const [savedPassword, setSavedPassword] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function reset() {
+    setPassword("");
+    setConfirm("");
+    setShow(false);
+    setError(null);
+    setSavedPassword(null);
+    setCopied(false);
+  }
+
+  function handleGenerate() {
+    const generated = generatePassword();
+    setPassword(generated);
+    setConfirm(generated);
+    setShow(true);
+  }
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    if (password.length < 8) {
+      setError("Senha deve ter ao menos 8 caracteres.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+    startTransition(async () => {
+      const result = await resetUserPasswordAction(userId, password);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setSavedPassword(password);
+      setPassword("");
+      setConfirm("");
+    });
+  }
+
+  async function handleCopy() {
+    if (!savedPassword) return;
+    try {
+      await navigator.clipboard.writeText(savedPassword);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // fallback silently
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) reset();
+      }}
+    >
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="gap-1.5"
+        onClick={() => setOpen(true)}
+      >
+        <KeyRound className="w-3.5 h-3.5" />
+        Redefinir senha
+      </Button>
+
+      <DialogContent className="sm:max-w-md">
+        {savedPassword ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Senha alterada</DialogTitle>
+              <DialogDescription>
+                Sessões em outros dispositivos foram invalidadas. O usuário
+                vai precisar logar de novo.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 pt-2">
+              <Label className="text-xs text-muted-foreground font-medium">
+                Nova senha de {userName}
+              </Label>
+              <div className="flex items-stretch gap-2">
+                <code className="flex-1 rounded-md border border-border/60 bg-card/40 px-3 py-2 text-sm font-mono break-all">
+                  {savedPassword}
+                </code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopy}
+                  aria-label="Copiar senha"
+                >
+                  {copied ? (
+                    <Check className="w-4 h-4 text-primary" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-amber-500">
+                Você não verá mais essa senha. Copie agora e envie pelo canal
+                seguro combinado com o usuário.
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" onClick={() => setOpen(false)}>
+                Fechar
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Redefinir senha</DialogTitle>
+              <DialogDescription>
+                Define uma nova senha para <strong>{userName}</strong>. Não há
+                e-mail automático — você precisa avisar o usuário.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleSubmit} className="space-y-3 pt-2">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="rp-password"
+                    className="text-xs text-muted-foreground font-medium"
+                  >
+                    Nova senha
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={handleGenerate}
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Gerar aleatória
+                  </button>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="rp-password"
+                    type={show ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={8}
+                    maxLength={128}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShow((s) => !s)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={show ? "Esconder senha" : "Mostrar senha"}
+                  >
+                    {show ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="rp-confirm"
+                  className="text-xs text-muted-foreground font-medium"
+                >
+                  Confirmar senha
+                </Label>
+                <Input
+                  id="rp-confirm"
+                  type={show ? "text" : "password"}
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  minLength={8}
+                  maxLength={128}
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                Entre 8 e 128 caracteres. O gerador produz 16 chars com
+                maiúscula, minúscula, dígito e símbolo. Refresh tokens do
+                usuário serão invalidados.
+              </p>
+
+              {error && (
+                <p className="text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={pending}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={pending}>
+                  {pending && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {pending ? "Redefinindo..." : "Redefinir senha"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
