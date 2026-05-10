@@ -1,8 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, MailCheck, MailWarning } from "lucide-react";
+import { ArrowRight, MailCheck, MailWarning, Tags } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { describeClassification } from "@/lib/admin/classification";
 import type { AdminAthleteListItem } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
+import { ClassifyAthleteDialog } from "./classify-athlete-dialog";
 
 const POSITION_LABELS: Record<string, string> = {
   GOALKEEPER: "GOLEIRO",
@@ -39,6 +42,7 @@ export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
   const href = `/admin/atletas/${athlete.id}`;
   const displayName = athlete.nickname || athlete.user.name;
   const heightCm = heightInCm(athlete.height);
+  const classification = describeClassification(athlete.classification);
 
   return (
     <article
@@ -99,6 +103,33 @@ export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="px-4 pb-3 flex items-center justify-between gap-2">
+        <span
+          className={cn(
+            "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+            classification.badgeClass
+          )}
+        >
+          {classification.label}
+        </span>
+        <ClassifyAthleteDialog
+          athleteId={athlete.id}
+          athleteName={displayName}
+          current={athlete.classification}
+          trigger={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1 px-2 text-[11px]"
+            >
+              <Tags className="w-3 h-3" />
+              Classificar
+            </Button>
+          }
+        />
       </div>
 
       <div className="grid grid-cols-3 border-t border-border/60 divide-x divide-border/60">

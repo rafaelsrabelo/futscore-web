@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import { AlertTriangle, Users } from "lucide-react";
 import { API_URL, fetchAuthed } from "@/lib/admin/api";
-import type { AdminAthletesResponse } from "@/lib/admin/types";
+import { isClassificationFilter } from "@/lib/admin/classification";
+import type {
+  AdminAthletesResponse,
+  AthleteClassificationFilter,
+} from "@/lib/admin/types";
 import type { Position } from "@/lib/types";
 import { EmptyState } from "@/components/admin/page-header";
 import {
@@ -9,15 +13,18 @@ import {
   type AdvancedFilterValues,
 } from "./advanced-filters";
 import { AthleteCard } from "./athlete-card";
+import { ClassificationFilter } from "./classification-filter";
 import { Pagination } from "./pagination";
 import { PositionFilter } from "./position-filter";
 import { SearchInput } from "./search-input";
 
 type PositionFilterValue = Position | "ALL";
+type ClassificationFilterValue = AthleteClassificationFilter | "ALL";
 
 interface SearchParams {
   position?: string;
   primaryPosition?: string;
+  classification?: string;
   q?: string;
   page?: string;
   gender?: string;
@@ -51,6 +58,12 @@ function normalizePosition(value: string | undefined): PositionFilterValue {
     : "ALL";
 }
 
+function normalizeClassification(
+  value: string | undefined
+): ClassificationFilterValue {
+  return isClassificationFilter(value) ? value : "ALL";
+}
+
 function pickEnum(value: string | undefined, allowed: Set<string>): string {
   const v = (value ?? "").trim();
   return allowed.has(v) ? v : "";
@@ -81,17 +94,20 @@ function parseAdvanced(sp: SearchParams): AdvancedFilterValues {
 function buildApiQuery({
   q,
   position,
+  classification,
   page,
   advanced,
 }: {
   q: string;
   position: PositionFilterValue;
+  classification: ClassificationFilterValue;
   page: number;
   advanced: AdvancedFilterValues;
 }): string {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (position !== "ALL") params.set("primaryPosition", position);
+  if (classification !== "ALL") params.set("classification", classification);
   params.set("page", String(page));
   params.set("pageSize", String(PAGE_SIZE));
 
@@ -104,15 +120,18 @@ function buildApiQuery({
 function buildBaseSearch({
   q,
   position,
+  classification,
   advanced,
 }: {
   q: string;
   position: PositionFilterValue;
+  classification: ClassificationFilterValue;
   advanced: AdvancedFilterValues;
 }): URLSearchParams {
   const base = new URLSearchParams();
   if (q) base.set("q", q);
   if (position !== "ALL") base.set("primaryPosition", position);
+  if (classification !== "ALL") base.set("classification", classification);
   for (const [key, value] of Object.entries(advanced)) {
     if (value) base.set(key, value);
   }
@@ -159,18 +178,25 @@ export default async function AtletasPage({
 }) {
   const sp = await searchParams;
   const position = normalizePosition(sp.primaryPosition ?? sp.position);
+  const classification = normalizeClassification(sp.classification);
   const q = (sp.q ?? "").trim();
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
   const advanced = parseAdvanced(sp);
 
-  const apiQuery = buildApiQuery({ q, position, page, advanced });
+  const apiQuery = buildApiQuery({
+    q,
+    position,
+    classification,
+    page,
+    advanced,
+  });
   const result = await fetchAdminAthletes(apiQuery);
 
   if (result.kind === "auth-error") {
     redirect("/admin/login");
   }
 
-  const baseSearch = buildBaseSearch({ q, position, advanced });
+  const baseSearch = buildBaseSearch({ q, position, classification, advanced });
   const totalResults = result.kind === "ok" ? result.data.total : 0;
 
   return (
@@ -188,6 +214,10 @@ export default async function AtletasPage({
       <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
         <SearchInput defaultValue={q} />
         <PositionFilter active={position} />
+      </div>
+
+      <div className="mb-4">
+        <ClassificationFilter active={classification} />
       </div>
 
       {result.kind !== "ok" ? (

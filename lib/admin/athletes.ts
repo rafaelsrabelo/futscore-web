@@ -7,6 +7,7 @@ import type {
   AdminMatchListResponse,
   AdminPlaysResponse,
   AdminTeamHistoryResponse,
+  ClassificationHistoryResponse,
 } from "./types";
 
 export type DetailResult =
@@ -116,6 +117,24 @@ export async function getAdminAthleteTeamHistory(
     `/admin/athletes/${athleteId}/team-history`,
     "",
     "athlete-team-history"
+  );
+}
+
+export type ClassificationHistoryResult =
+  | { kind: "ok"; data: ClassificationHistoryResponse }
+  | { kind: "auth-error"; status: 401 | 403 }
+  | { kind: "not-found" }
+  | { kind: "http-error"; status: number; url: string }
+  | { kind: "network-error"; url: string };
+
+export async function getAdminAthleteClassificationHistory(
+  athleteId: string,
+  query: string = ""
+): Promise<ClassificationHistoryResult> {
+  return fetchList<ClassificationHistoryResponse>(
+    `/admin/athletes/${athleteId}/classification/history`,
+    query,
+    "athlete-classification-history"
   );
 }
 

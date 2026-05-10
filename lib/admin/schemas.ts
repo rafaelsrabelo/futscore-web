@@ -229,6 +229,18 @@ export const updateTeamHistorySchema = z.object({
 
 export type UpdateTeamHistoryInput = z.infer<typeof updateTeamHistorySchema>;
 
+const AthleteClassificationSchema = z.enum(["DESENVOLVIMENTO", "PERFORMANCE"]);
+
+export const setClassificationSchema = z.object({
+  classification: AthleteClassificationSchema.nullable(),
+  comment: z
+    .string()
+    .max(500, "Comentário deve ter no máximo 500 caracteres")
+    .optional(),
+});
+
+export type SetClassificationInput = z.infer<typeof setClassificationSchema>;
+
 export const resetPasswordSchema = z.object({
   password: z
     .string()

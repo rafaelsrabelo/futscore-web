@@ -18,6 +18,7 @@ import type {
   AdminAthleteDetailUser,
 } from "@/lib/admin/types";
 import { cn } from "@/lib/utils";
+import { ClassificationSection } from "./classification-section";
 
 const POSITION_LABELS: Record<string, string> = {
   GOALKEEPER: "Goleiro",
@@ -109,6 +110,7 @@ export default async function AtletaOverviewPage({
 
   const { profile, address, user, counts, playsByType, subscription } =
     result.data;
+  const displayName = profile.nickname || user.name;
 
   return (
     <>
@@ -135,7 +137,15 @@ export default async function AtletaOverviewPage({
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
+      <div className="mt-6">
+        <ClassificationSection
+          athleteId={profile.id}
+          athleteName={displayName}
+          current={profile.classification ?? null}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
         <ProfileSection profile={profile} user={user} />
         <div className="space-y-4">
           <AccountSection user={user} />

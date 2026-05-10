@@ -16,6 +16,7 @@ import {
   createTeamHistorySchema,
   loginSchema,
   resetPasswordSchema,
+  setClassificationSchema,
   updateAchievementSchema,
   updateAthleteSchema,
   updateMatchResultSchema,
@@ -26,6 +27,7 @@ import {
   type CreateAchievementInput,
   type CreateMatchInput,
   type CreateTeamHistoryInput,
+  type SetClassificationInput,
   type UpdateAchievementInput,
   type UpdateAthleteInput,
   type UpdateMatchInput,
@@ -34,7 +36,7 @@ import {
   type UpdateTeamHistoryInput,
   type UpdateUserInput,
 } from "./schemas";
-import type { TokenPair } from "./types";
+import type { SetClassificationResponse, TokenPair } from "./types";
 
 const API_URL =
   process.env.API_URL ?? "https://futscout-api.onrender.com/api";
@@ -1165,6 +1167,73 @@ export async function resetUserPasswordAction(
   return {
     ok: false,
     error: message ?? `Falha ao redefinir (HTTP ${res.status}).`,
+  };
+}
+
+// ---------- Athlete classification ----------
+
+export type SetClassificationResult =
+  | { ok: true; data: SetClassificationResponse }
+  | { ok: false; error: string };
+
+export async function setAthleteClassificationAction(
+  athleteId: string,
+  input: SetClassificationInput
+): Promise<SetClassificationResult> {
+  if (!athleteId) {
+    return { ok: false, error: "ID do atleta é obrigatório." };
+  }
+
+  const parsed = setClassificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  const body: Record<string, unknown> = {
+    classification: parsed.data.classification,
+  };
+  const trimmed = parsed.data.comment?.trim();
+  if (trimmed) body.comment = trimmed;
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/athletes/${athleteId}/classification`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[setAthleteClassificationAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath("/admin/atletas");
+    revalidatePath(`/admin/atletas/${athleteId}`, "layout");
+    const data = (await res.json()) as SetClassificationResponse;
+    return { ok: true, data };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[setAthleteClassificationAction] not ok", {
+    status: res.status,
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    return { ok: false, error: "Sessão expirada. Faça login de novo." };
+  }
+  if (res.status === 404) {
+    return { ok: false, error: message ?? "Atleta não encontrado." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao classificar (HTTP ${res.status}).`,
   };
 }
 

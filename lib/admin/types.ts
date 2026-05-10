@@ -42,6 +42,11 @@ export interface AdminAthleteUser {
   lastLoginAt: string | null;
 }
 
+export type AthleteClassification = "DESENVOLVIMENTO" | "PERFORMANCE";
+export type AthleteClassificationFilter =
+  | AthleteClassification
+  | "UNCLASSIFIED";
+
 export interface AdminAthleteListItem {
   id: string;
   nickname: string | null;
@@ -53,6 +58,7 @@ export interface AdminAthleteListItem {
   secondaryPosition: Position | null;
   dominantFoot: DominantFoot | null;
   currentClub: string | null;
+  classification: AthleteClassification | null;
   /** Altura em METROS (ex.: 1.78). Pra exibir em cm, multiplicar por 100. */
   height: number | null;
   /** Peso em kg. */
@@ -125,8 +131,51 @@ export interface AdminAthleteDetailProfile {
   hasNutritionist?: boolean;
   hasPsychologist?: boolean;
   hasPersonalTrainer?: boolean;
+  classification?: AthleteClassification | null;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface ClassificationLogAdmin {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface ClassificationLog {
+  id: string;
+  athleteId: string;
+  classification: AthleteClassification | null;
+  comment: string | null;
+  classifiedById: string;
+  createdAt: string;
+  classifiedBy: ClassificationLogAdmin;
+}
+
+export interface ClassificationHistoryResponse {
+  items: ClassificationLog[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export interface SetClassificationLog {
+  id: string;
+  classification: AthleteClassification | null;
+  comment: string | null;
+  classifiedById: string;
+  createdAt: string;
+}
+
+export interface SetClassificationResponse {
+  athleteProfile: {
+    id: string;
+    userId: string;
+    classification: AthleteClassification | null;
+    updatedAt: string;
+  };
+  log: SetClassificationLog;
 }
 
 export interface AdminAthleteDetailAddress {
