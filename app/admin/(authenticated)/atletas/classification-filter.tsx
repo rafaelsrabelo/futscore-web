@@ -40,6 +40,7 @@ export function ClassificationFilter({ active }: { active: Value }) {
             key={value}
             href={hrefFor(value)}
             scroll={false}
+            prefetch={false}
             className={cn(
               "px-4 py-1.5 rounded-md text-sm transition-colors whitespace-nowrap",
               isActive
