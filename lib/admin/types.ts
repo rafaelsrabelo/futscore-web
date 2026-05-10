@@ -48,7 +48,8 @@ export type AthleteClassificationFilter =
   | "UNCLASSIFIED";
 
 export interface AdminAthleteListItem {
-  id: string;
+  /** ID do AthleteProfile. `null` quando o usuário ainda não criou perfil. */
+  id: string | null;
   nickname: string | null;
   profilePhoto: string | null;
   birthDate: string | null;

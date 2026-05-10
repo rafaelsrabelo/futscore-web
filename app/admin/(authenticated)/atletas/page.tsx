@@ -236,7 +236,7 @@ export default async function AtletasPage({
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {result.data.items.map((athlete) => (
-              <AthleteCard key={athlete.id} athlete={athlete} />
+              <AthleteCard key={athlete.user.id} athlete={athlete} />
             ))}
           </div>
           <Pagination

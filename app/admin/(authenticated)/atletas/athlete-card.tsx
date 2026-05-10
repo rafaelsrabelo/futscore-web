@@ -39,7 +39,9 @@ function heightInCm(height: number | null): number {
 }
 
 export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
-  const href = `/admin/atletas/${athlete.id}`;
+  const profileId = athlete.id;
+  const hasProfile = profileId !== null;
+  const href = hasProfile ? `/admin/atletas/${profileId}` : null;
   const displayName = athlete.nickname || athlete.user.name;
   const heightCm = heightInCm(athlete.height);
   const classification = describeClassification(athlete.classification);
@@ -114,22 +116,26 @@ export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
         >
           {classification.label}
         </span>
-        <ClassifyAthleteDialog
-          athleteId={athlete.id}
-          athleteName={displayName}
-          current={athlete.classification}
-          trigger={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 gap-1 px-2 text-[11px]"
-            >
-              <Tags className="w-3 h-3" />
-              Classificar
-            </Button>
-          }
-        />
+        {hasProfile ? (
+          <ClassifyAthleteDialog
+            athleteId={profileId}
+            athleteName={displayName}
+            current={athlete.classification}
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 px-2 text-[11px]"
+              >
+                <Tags className="w-3 h-3" />
+                Classificar
+              </Button>
+            }
+          />
+        ) : (
+          <span className="text-[10px] text-muted-foreground">Sem perfil</span>
+        )}
       </div>
 
       <div className="grid grid-cols-3 border-t border-border/60 divide-x divide-border/60">
@@ -145,13 +151,19 @@ export function AthleteCard({ athlete }: { athlete: AdminAthleteListItem }) {
         />
       </div>
 
-      <Link
-        href={href}
-        className="flex items-center justify-between px-4 py-3 text-[10px] font-bold tracking-wider text-primary border-t border-border/60 hover:bg-primary/5 transition-colors"
-      >
-        Abrir detalhes
-        <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-      </Link>
+      {href ? (
+        <Link
+          href={href}
+          className="flex items-center justify-between px-4 py-3 text-[10px] font-bold tracking-wider text-primary border-t border-border/60 hover:bg-primary/5 transition-colors"
+        >
+          Abrir detalhes
+          <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      ) : (
+        <div className="px-4 py-3 text-[10px] font-bold tracking-wider text-muted-foreground border-t border-border/60">
+          Usuário ainda não criou perfil de atleta
+        </div>
+      )}
     </article>
   );
 }
