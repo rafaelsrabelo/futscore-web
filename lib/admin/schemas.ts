@@ -268,3 +268,68 @@ export const updateUserSchema = z.object({
 });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+// ---- Notifications ----
+
+const NotificationClassificationSchema = z.enum([
+  "DESENVOLVIMENTO",
+  "PERFORMANCE",
+  "UNCLASSIFIED",
+]);
+
+export const notificationAthleteFiltersSchema = z.object({
+  gender: GenderSchema.optional(),
+  primaryPosition: PositionSchema.optional(),
+  dominantFoot: DominantFootSchema.optional(),
+  classification: NotificationClassificationSchema.optional(),
+  currentClub: z.string().trim().min(1).optional(),
+  minAge: z.number().int().min(0).max(120).optional(),
+  maxAge: z.number().int().min(0).max(120).optional(),
+  minHeight: z.number().positive().optional(),
+  maxHeight: z.number().positive().optional(),
+  minWeight: z.number().positive().optional(),
+  maxWeight: z.number().positive().optional(),
+});
+
+export const notificationAudienceSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("ALL") }),
+  z.object({
+    type: z.literal("USER_IDS"),
+    userIds: z.array(z.uuid()).min(1, "Selecione ao menos um usuário"),
+  }),
+  z.object({
+    type: z.literal("ATHLETE_FILTER"),
+    filters: notificationAthleteFiltersSchema,
+  }),
+]);
+
+export type NotificationAudienceInput = z.infer<
+  typeof notificationAudienceSchema
+>;
+
+export const previewNotificationSchema = z.object({
+  audience: notificationAudienceSchema,
+});
+
+export type PreviewNotificationInput = z.infer<
+  typeof previewNotificationSchema
+>;
+
+export const sendNotificationSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Título é obrigatório")
+    .max(120, "Título deve ter no máximo 120 caracteres"),
+  body: z
+    .string()
+    .trim()
+    .min(1, "Mensagem é obrigatória")
+    .max(240, "Mensagem deve ter no máximo 240 caracteres"),
+  data: z.record(z.string(), z.unknown()).optional(),
+  audience: notificationAudienceSchema,
+  sound: z.enum(["default"]).nullable().optional(),
+  badge: z.number().int().min(0).optional(),
+});
+
+export type SendNotificationInput = z.infer<typeof sendNotificationSchema>;

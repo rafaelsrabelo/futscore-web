@@ -493,3 +493,68 @@ export interface AdminUserDetail {
   observerProfileId: string | null;
   activePlan: AdminActivePlan;
 }
+
+// ---- Notifications (admin push) ----
+
+export type NotificationAudienceType = "ALL" | "USER_IDS" | "ATHLETE_FILTER";
+
+export interface NotificationAthleteFilters {
+  gender?: Gender;
+  primaryPosition?: Position;
+  dominantFoot?: DominantFoot;
+  classification?: AthleteClassificationFilter;
+  currentClub?: string;
+  minAge?: number;
+  maxAge?: number;
+  minHeight?: number;
+  maxHeight?: number;
+  minWeight?: number;
+  maxWeight?: number;
+}
+
+export type NotificationAudience =
+  | { type: "ALL" }
+  | { type: "USER_IDS"; userIds: string[] }
+  | { type: "ATHLETE_FILTER"; filters: NotificationAthleteFilters };
+
+export interface NotificationPreviewResponse {
+  totalRecipients: number;
+  totalWithPushToken: number;
+}
+
+export interface SendNotificationResponse {
+  log: { id: string; createdAt: string };
+  totalRecipients: number;
+  totalWithToken: number;
+  successCount: number;
+  failureCount: number;
+  invalidTokensRemoved: number;
+}
+
+export interface NotificationLogItem {
+  id: string;
+  title: string;
+  body: string;
+  data: Record<string, unknown> | null;
+  audienceType: NotificationAudienceType;
+  audiencePayload: NotificationAudience;
+  sentByUserId: string;
+  totalRecipients: number;
+  totalWithToken: number;
+  successCount: number;
+  failureCount: number;
+  invalidTokensCnt: number;
+  createdAt: string;
+}
+
+export interface NotificationsListResponse {
+  items: NotificationLogItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export interface NotificationDetailResponse {
+  notification: NotificationLogItem;
+}

@@ -15,7 +15,9 @@ import {
   createMatchSchema,
   createTeamHistorySchema,
   loginSchema,
+  previewNotificationSchema,
   resetPasswordSchema,
+  sendNotificationSchema,
   setClassificationSchema,
   updateAchievementSchema,
   updateAthleteSchema,
@@ -27,6 +29,8 @@ import {
   type CreateAchievementInput,
   type CreateMatchInput,
   type CreateTeamHistoryInput,
+  type PreviewNotificationInput,
+  type SendNotificationInput,
   type SetClassificationInput,
   type UpdateAchievementInput,
   type UpdateAthleteInput,
@@ -36,7 +40,12 @@ import {
   type UpdateTeamHistoryInput,
   type UpdateUserInput,
 } from "./schemas";
-import type { SetClassificationResponse, TokenPair } from "./types";
+import type {
+  NotificationPreviewResponse,
+  SendNotificationResponse,
+  SetClassificationResponse,
+  TokenPair,
+} from "./types";
 
 const API_URL =
   process.env.API_URL ?? "https://futscout-api.onrender.com/api";
@@ -1234,6 +1243,107 @@ export async function setAthleteClassificationAction(
   return {
     ok: false,
     error: message ?? `Falha ao classificar (HTTP ${res.status}).`,
+  };
+}
+
+// ---------- Notifications ----------
+
+export type PreviewNotificationResult =
+  | { ok: true; data: NotificationPreviewResponse }
+  | { ok: false; error: string };
+
+export async function previewNotificationAction(
+  input: PreviewNotificationInput
+): Promise<PreviewNotificationResult> {
+  const parsed = previewNotificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Audiência inválida.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/notifications/preview`, {
+      method: "POST",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[previewNotificationAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    return {
+      ok: true,
+      data: (await res.json()) as NotificationPreviewResponse,
+    };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[previewNotificationAction] not ok", { status: res.status });
+
+  if (res.status === 401 || res.status === 403) {
+    return { ok: false, error: "Sessão expirada. Faça login de novo." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Audiência inválida." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao calcular destinatários (HTTP ${res.status}).`,
+  };
+}
+
+export type SendNotificationResult =
+  | { ok: true; data: SendNotificationResponse }
+  | { ok: false; error: string };
+
+export async function sendNotificationAction(
+  input: SendNotificationInput
+): Promise<SendNotificationResult> {
+  const parsed = sendNotificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+    };
+  }
+
+  let res: Response;
+  try {
+    res = await fetchAuthed(`/admin/notifications/send`, {
+      method: "POST",
+      body: JSON.stringify(parsed.data),
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("[sendNotificationAction] network error", err);
+    return { ok: false, error: "Falha de conexão com a API." };
+  }
+
+  if (res.ok) {
+    revalidatePath("/admin/notificacoes");
+    return {
+      ok: true,
+      data: (await res.json()) as SendNotificationResponse,
+    };
+  }
+
+  const message = await readErrorMessage(res);
+  console.error("[sendNotificationAction] not ok", { status: res.status });
+
+  if (res.status === 401 || res.status === 403) {
+    return { ok: false, error: "Sessão expirada. Faça login de novo." };
+  }
+  if (res.status === 400) {
+    return { ok: false, error: message ?? "Dados inválidos." };
+  }
+  return {
+    ok: false,
+    error: message ?? `Falha ao enviar notificação (HTTP ${res.status}).`,
   };
 }
 
