@@ -6,7 +6,7 @@ import { getAdminMatches } from "@/lib/admin/matches";
 import type { Position } from "@/lib/types";
 import { Pagination } from "../atletas/pagination";
 import { MatchRow } from "./match-row";
-import { PositionFilter } from "./position-filter";
+import { PositionFilter } from "@/components/admin/position-filter";
 import { SearchInput } from "./search-input";
 
 type PositionFilterValue = Position | "ALL";

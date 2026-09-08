@@ -15,7 +15,7 @@ import {
 import { AthleteCard } from "./athlete-card";
 import { ClassificationFilter } from "./classification-filter";
 import { Pagination } from "./pagination";
-import { PositionFilter } from "./position-filter";
+import { PositionFilter } from "@/components/admin/position-filter";
 import { SearchInput } from "./search-input";
 
 type PositionFilterValue = Position | "ALL";
