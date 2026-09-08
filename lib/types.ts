@@ -143,6 +143,14 @@ export interface Team {
   acronym: string;
 }
 
+export interface Competition {
+  id: string;
+  name: string;
+  description: string | null;
+  startDate: string | null;
+  endDate: string | null;
+}
+
 export interface Match {
   id: string;
   adversaryTeam: string;
@@ -159,12 +167,12 @@ export interface Match {
   performanceRating: number | null;
   isFriendly: boolean;
   competitionName: string | null;
-  competition: unknown | null;
+  competition: Competition | null;
 }
 
 export interface MatchGroup {
   type: string;
-  competition: string | null;
+  competition: Competition | null;
   matches: Match[];
 }
 

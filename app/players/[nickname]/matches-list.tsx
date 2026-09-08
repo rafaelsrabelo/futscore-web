@@ -2,89 +2,87 @@
 
 import { MatchListItem } from "@/components/matches/match-list-item";
 import { Button } from "@/components/ui/button";
-import { CompactCard } from "@/components/ui/compact-card";
-import type { Match } from "@/lib/types";
-import { ChevronLeft, ChevronRight, Trophy } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { MatchGroup } from "@/lib/types";
+import { ChevronDown, ChevronUp, Trophy } from "lucide-react";
 import { useState } from "react";
 
 interface MatchesListProps {
-  matches: Match[];
+  groups: MatchGroup[];
 }
 
-export function MatchesList({ matches }: MatchesListProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const matchesPerPage = 3;
-  
-  const totalPages = Math.ceil(matches.length / matchesPerPage);
-  const startIndex = (currentPage - 1) * matchesPerPage;
-  const endIndex = startIndex + matchesPerPage;
-  const currentMatches = matches.slice(startIndex, endIndex);
+const MATCHES_PREVIEW_COUNT = 4;
 
-  const goToNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  };
+function MatchGroupCard({ group }: { group: MatchGroup }) {
+  const [expanded, setExpanded] = useState(false);
 
-  const goToPreviousPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  };
+  const label = group.competition?.name || group.type || "Partidas avulsas";
+  const wins = group.matches.filter((m) => m.result === "WIN").length;
+  const draws = group.matches.filter((m) => m.result === "DRAW").length;
+  const losses = group.matches.filter((m) => m.result === "LOSS").length;
 
-  if (matches.length === 0) {
+  const visibleMatches = expanded
+    ? group.matches
+    : group.matches.slice(0, MATCHES_PREVIEW_COUNT);
+  const hasMore = group.matches.length > MATCHES_PREVIEW_COUNT;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Trophy className="w-4 h-4 text-primary" />
+            {label}
+          </CardTitle>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="text-green-500 font-medium">{wins}V</span>
+            <span className="text-yellow-500 font-medium">{draws}E</span>
+            <span className="text-red-500 font-medium">{losses}D</span>
+            <span>{group.matches.length} jogos</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {visibleMatches.map((match) => (
+          <MatchListItem key={match.id} match={match} showTimeline={false} />
+        ))}
+
+        {hasMore && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full gap-1.5 text-xs text-muted-foreground"
+            onClick={() => setExpanded((prev) => !prev)}
+          >
+            {expanded ? (
+              <>
+                Mostrar menos <ChevronUp className="w-3 h-3" />
+              </>
+            ) : (
+              <>
+                Mostrar todas ({group.matches.length}){" "}
+                <ChevronDown className="w-3 h-3" />
+              </>
+            )}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function MatchesList({ groups }: MatchesListProps) {
+  const nonEmptyGroups = groups.filter((group) => group.matches.length > 0);
+
+  if (nonEmptyGroups.length === 0) {
     return null;
   }
 
   return (
-    <CompactCard 
-      title="Partidas Recentes" 
-      icon={<Trophy className="w-4 h-4 text-primary" />}
-      headerClassName="flex items-center justify-between"
-    >
-      <div className="space-y-2">
-        {/* Lista de partidas com timeline */}
-        <div className="relative space-y-2 pl-3">
-          {/* Timeline vertical */}
-          {totalPages > 1 && currentMatches.length > 1 && (
-            <div className="absolute left-0 top-4 bottom-4 w-px bg-border" />
-          )}
-          
-          {currentMatches.map((match) => (
-            <MatchListItem 
-              key={match.id} 
-              match={match}
-              showTimeline={true}
-            />
-          ))}
-        </div>
-
-        {/* Paginação compacta */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-3 border-t">
-            <div className="text-xs text-muted-foreground">
-              Página {currentPage} de {totalPages}
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                className="h-7 w-7 p-0"
-              >
-                <ChevronLeft className="w-3 h-3" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNextPage}
-                disabled={currentPage === totalPages}
-                className="h-7 w-7 p-0"
-              >
-                <ChevronRight className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </CompactCard>
+    <div className="space-y-4">
+      {nonEmptyGroups.map((group, index) => (
+        <MatchGroupCard key={`${group.competition?.id ?? group.type}-${index}`} group={group} />
+      ))}
+    </div>
   );
 }
-
